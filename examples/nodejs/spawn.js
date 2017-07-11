@@ -2,7 +2,7 @@ var user = 'root';
 var userid = require('userid');
 var spawn = require('child_process').spawn;
 var proc = spawn('rsync',  ['--daemon'], {
-	'uid': userid.gid(user),
+	'uid': userid.uid(user),
 	'gid': userid.gid(user)
 });
 
