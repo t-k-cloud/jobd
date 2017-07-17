@@ -99,6 +99,8 @@ function syncLoop(arr, deed) {
 			if (idx + 1 < arr.length) {
 				deed(arr[idx + 1], loop);
 				idx = idx + 1;
+			} else {
+				console.log('syncLoop done.');
 			}
 		},
 		again: function () {
@@ -151,6 +153,7 @@ app.get('/', function (req, res) {
 		// parse
 		let targetProps = depGraph.getNodeData(job);
 		let cmd, uid, gid, ug;
+
 		if (targetProps['exe_as_root']) {
 			cmd = targetProps['exe_as_root'];
 			ug = 'root';
@@ -159,13 +162,17 @@ app.get('/', function (req, res) {
 			ug = curuser;
 		}
 
-		if (targetProps['if_not']) {
-			cmd = targetProps['if_not'];
-			console.log('run if-not: ' + cmd);
-			jobrun(cmd, ug, ug, loop.next, loop.again);
-		} else {
+		let doCmd = function () {
 			console.log('Run as ' + ug + ': ' + cmd);
 			jobrun(cmd, ug, ug, loop.next, loop.again);
+		};
+
+		if (targetProps['if_not']) {
+			let ifnot_cmd = targetProps['if_not'];
+			console.log('run if-not: ' + ifnot_cmd);
+			jobrun(ifnot_cmd, ug, ug, loop.next, doCmd);
+		} else {
+			doCmd();
 		}
 	});
 });
@@ -195,13 +202,14 @@ function jobrun(cmd, user, group, next, again) {
 		var str = data.toString()
 		console.log('stderr: ' + str);
 	});
+	process.stdin.pipe(proc.stdin);
 
-	proc.on('close', function (code) {
+	proc.on('exit', function (code) {
 		console.log('#' + this.pid + ' exit code: ' + code);
 		if (code == 0) {
-			next();
+			setTimeout(next, 500);
 		} else {
-			setTimeout(again, 3000);
+			setTimeout(again, 2000);
 		}
 	});
 }
