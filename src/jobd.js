@@ -92,6 +92,23 @@ try {
 
 console.log(overallOrder);
 
+function syncLoop(arr, deed) {
+	let idx = 0;
+	let loop = {
+		next: function () {
+			if (idx + 1 < arr.length) {
+				deed(arr[idx + 1], loop);
+				idx = idx + 1;
+			}
+		},
+		again: function () {
+			deed(arr[idx], loop);
+		},
+	};
+
+	loop.again();
+}
+
 app = express();
 app.use(bodyParser.json());
 app.use(express.static('.'));
@@ -130,34 +147,40 @@ app.get('/', function (req, res) {
 
 	res.json({"runList": runList});
 
-	runList.forEach(function (job) {
-		jobrun(job);
+	syncLoop(runList, function (job, loop) {
+		// parse
+		let targetProps = depGraph.getNodeData(job);
+		let cmd, uid, gid, ug;
+		if (targetProps['exe_as_root']) {
+			cmd = targetProps['exe_as_root'];
+			ug = 'root';
+		} else {
+			cmd = targetProps['exe'] || '';
+			ug = curuser;
+		}
+
+		if (targetProps['if_not']) {
+			cmd = targetProps['if_not'];
+			console.log('run if-not: ' + cmd);
+			jobrun(cmd, ug, ug, loop.next, loop.again);
+		} else {
+			console.log('Run as ' + ug + ': ' + cmd);
+			jobrun(cmd, ug, ug, loop.next, loop.again);
+		}
 	});
 });
 
+console.log('listening...');
 app.listen(3001);
 
-function jobrun(job) {
-	// parse
-	let targetProps = depGraph.getNodeData(job);
-	let cmd, uid, gid, ug;
-	if (targetProps['exe_as_root']) {
-		cmd = targetProps['exe_as_root'];
-		ug = 'root';
-	} else {
-		cmd = targetProps['exe'] || '';
-		ug = curuser;
-	}
-
+function jobrun(cmd, user, group, next, again) {
 	let cmdArgs = shellQuote.parse(cmd);
 	let cmdPath = cmdArgs.shift();
-	console.log('Run as ' + ug + ': ' +
-	            cmdPath + ' ' + cmdArgs.toString());
 
 	// run
 	var proc = spawn(cmdPath, cmdArgs, {
-		'uid': uid,
-		'gid': gid
+		'uid': userid.uid(user),
+		'gid': userid.gid(group)
 	});
 
 	console.log('PID = #' + proc.pid);
@@ -165,10 +188,20 @@ function jobrun(job) {
 	proc.stdout.setEncoding('utf8');
 	proc.stdout.on('data', function (data) {
 		var str = data.toString()
-		console.log(str);
+		console.log('stdout: ' + str);
+	});
+	proc.stderr.setEncoding('utf8');
+	proc.stderr.on('data', function (data) {
+		var str = data.toString()
+		console.log('stderr: ' + str);
 	});
 
 	proc.on('close', function (code) {
 		console.log('#' + this.pid + ' exit code: ' + code);
+		if (code == 0) {
+			next();
+		} else {
+			setTimeout(again, 3000);
+		}
 	});
 }
