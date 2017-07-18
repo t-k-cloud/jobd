@@ -22,10 +22,8 @@ if (3 != args.length) {
 
 var curuser = args[2];
 var workdir = '/home/' + curuser;
-//var jobsdir = workdir + '/jobs';
-var jobsdir = '/home/tk/Desktop/blog-feeds-incr-sync/tkcloud/jobd/examples/jobs';
+var jobsdir = workdir + '/jobs';
 var logsdir = workdir + '/jobs-log';
-
 
 try {
 	execSync('touch /root/test');
@@ -204,6 +202,7 @@ function jobrun(cmd, cwd, user, group, next, again) {
 		'gid': userid.gid(group),
 		'env': {
 			'PATH': process.env['PATH'],
+			'JOBSDIR': jobsdir,
 			'USER': user,
 			'USERNAME': user,
 			'HOME': (user == 'root') ? '/root' :
