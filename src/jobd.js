@@ -62,14 +62,14 @@ cfgFiles.forEach(function (cfgFile) {
 			continue;
 
 		let target = cfgFile.name + ':' + section;
-		console.log('adding target ' + target);
+		// console.log('adding target ' + target);
 		depGraph.addNode(target);
 		depGraph.setNodeData(target, cfg[section]);
 	}
 });
 
 var overallOrder = depGraph.overallOrder();
-console.log(overallOrder);
+//console.log(overallOrder);
 
 overallOrder.forEach(function (target) {
 	let targetProps = depGraph.getNodeData(target);
@@ -152,7 +152,12 @@ app.get('/', function (req, res) {
 	syncLoop(runList, function (job, loop) {
 		// parse
 		let targetProps = depGraph.getNodeData(job);
-		let cmd, uid, gid, ug;
+		let cmd, cwd, uid, gid, ug;
+
+		if (targetProps['cwd'])
+			cwd = targetProps['cwd'];
+		else
+			cwd = '.';
 
 		if (targetProps['exe_as_root']) {
 			cmd = targetProps['exe_as_root'];
@@ -164,13 +169,22 @@ app.get('/', function (req, res) {
 
 		let doCmd = function () {
 			console.log('Run as ' + ug + ': ' + cmd);
-			jobrun(cmd, ug, ug, loop.next, loop.again);
+			jobrun(cmd, cwd, ug, ug, loop.next, loop.again);
 		};
 
-		if (targetProps['if_not']) {
+		if (cmd == '') {
+			setTimeout(loop.next, 500);
+			return;
+		}
+
+		if (targetProps['if']) {
+			let if_cmd = targetProps['if'];
+			console.log('run if: ' + if_cmd);
+			jobrun(if_cmd, cwd, ug, ug, doCmd, loop.next);
+		} else if (targetProps['if_not']) {
 			let ifnot_cmd = targetProps['if_not'];
 			console.log('run if-not: ' + ifnot_cmd);
-			jobrun(ifnot_cmd, ug, ug, loop.next, doCmd);
+			jobrun(ifnot_cmd, cwd, ug, ug, loop.next, doCmd);
 		} else {
 			doCmd();
 		}
@@ -180,14 +194,16 @@ app.get('/', function (req, res) {
 console.log('listening...');
 app.listen(3001);
 
-function jobrun(cmd, user, group, next, again) {
+function jobrun(cmd, cwd, user, group, next, again) {
 	let cmdArgs = shellQuote.parse(cmd);
 	let cmdPath = cmdArgs.shift();
+
 
 	// run
 	var proc = spawn(cmdPath, cmdArgs, {
 		'uid': userid.uid(user),
-		'gid': userid.gid(group)
+		'gid': userid.gid(group),
+		'cwd': cwd
 	});
 
 	console.log('PID = #' + proc.pid);
@@ -206,10 +222,24 @@ function jobrun(cmd, user, group, next, again) {
 
 	proc.on('exit', function (code) {
 		console.log('#' + this.pid + ' exit code: ' + code);
+		process.stdin.unpipe(proc.stdin);
 		if (code == 0) {
 			setTimeout(next, 500);
 		} else {
 			setTimeout(again, 2000);
 		}
+	});
+
+	proc.stdout.on('error', function () {
+		console.log('child stdout error!!!');
+	});
+	proc.stderr.on('error', function () {
+		console.log('child stderr error!!!');
+	});
+	proc.stdin.on('error', function () {
+		console.log('child stdin error!!!');
+	});
+	process.stdin.on('error', function () {
+		console.log('stdin error!!!');
 	});
 }
