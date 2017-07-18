@@ -100,7 +100,7 @@ function syncLoop(arr, deed) {
 				deed(arr[idx + 1], loop);
 				idx = idx + 1;
 			} else {
-				console.log('syncLoop done.');
+				console.log(arr[arr.length - 1] + ' done.');
 			}
 		},
 		again: function () {
@@ -198,11 +198,18 @@ function jobrun(cmd, cwd, user, group, next, again) {
 	let cmdArgs = shellQuote.parse(cmd);
 	let cmdPath = cmdArgs.shift();
 
-
 	// run
 	var proc = spawn(cmdPath, cmdArgs, {
 		'uid': userid.uid(user),
 		'gid': userid.gid(group),
+		'env': {
+			'PATH': process.env['PATH'],
+			'USER': user,
+			'USERNAME': user,
+			'HOME': (user == 'root') ? '/root' :
+			                           '/home/' + user,
+			'SHELL': '/bin/sh'
+		},
 		'cwd': cwd
 	});
 
