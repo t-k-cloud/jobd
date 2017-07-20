@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link  href="vendor/mermaid.css" rel="stylesheet"/>
+    <script src="vendor/mermaid.min.js"></script>
+    <script src="vendor/jquery.min.js"></script>
+<script>
+$(document).ready(function () {
+	mermaidAPI.initialize({startOnLoad:false});
+	$.ajax({
+		method: "GET",
+		url:"deps",
+		contentType: "application/json; charset=utf-8",
+		dataType: "json" /* expecting data type */
+	}).done(function (retjson) {
+		var graphDef = 'graph LR \n';
+		for (var node in retjson) {
+			var depArr = retjson[node];
+			for (var i in depArr) {
+				graphDef += node + ' -.-> ' + depArr[i] + "\n";
+			}
+		}
+
+		mermaidAPI.render('mermsvg', graphDef, function(svg){
+			$("#mermaid").html(svg);
+		});
+	});
+});
+</script>
+</head>
+<body>
+<div id="mermaid" class="mermaid"></div>
+</body>
+</html>

@@ -115,6 +115,20 @@ app.use(express.static('.'));
 
 app.get('/', function (req, res) {
 	res.sendFile(__dirname + '/index.html');
+
+}).get('/graph', function (req, res) {
+	res.sendFile(__dirname + '/graph.html');
+
+}).get('/deps', function (req, res) {
+	let nodes = depGraph.overallOrder();
+	let retobj = {};
+	nodes.forEach(function (n) {
+		let props = depGraph.getNodeData(n);
+		let deps = props.dep || [];
+		retobj[n] = deps;
+	});
+	res.json(retobj);
+
 }).post('/query', function (req, res) {
 	let reqJson = req.body;
 	console.log(reqJson);
