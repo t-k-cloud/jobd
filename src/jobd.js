@@ -44,6 +44,8 @@ try {
 } catch (e) {
 	console.log(e.message);
 }
+console.log('environment variables:');
+console.log(env);
 
 var cfgFiles = [];
 
@@ -240,12 +242,12 @@ function jobrun(cmd, cwd, user, group, next, again) {
 	proc.stdout.setEncoding('utf8');
 	proc.stdout.on('data', function (data) {
 		var str = data.toString()
-		console.log('stdout: ' + str);
+		console.log(str);
 	});
 	proc.stderr.setEncoding('utf8');
 	proc.stderr.on('data', function (data) {
 		var str = data.toString()
-		console.log('stderr: ' + str);
+		console.log(str);
 	});
 	process.stdin.pipe(proc.stdin);
 
