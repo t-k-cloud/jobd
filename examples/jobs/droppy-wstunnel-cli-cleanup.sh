@@ -1,6 +1,4 @@
 #!/bin/sh
-curdir=$(cd $(dirname $0) && pwd)
-
 if [ ! -e ~/wsproxy ]; then
 	echo '~/wsproxy not exits.'
 	exit 0;

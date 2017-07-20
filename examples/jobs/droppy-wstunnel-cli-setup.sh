@@ -1,15 +1,12 @@
 #!/bin/sh
 curdir=$(cd $(dirname $0) && pwd)
 
-if [ ! -e ~/wsproxy ]; then
-	git clone https://github.com/t-k-cloud/wsproxy ~/wsproxy;
-fi;
+$curdir/gitrepo-mirror.sh \
+	https://github.com/t-k-cloud/wsproxy ~/wsproxy
 
 cd ~/wsproxy
-git fetch origin master
-git reset --hard origin/master
+echo "start new instances ..."
 
-# start new instances
 for i in `seq 1 2`; do
 	node ./wsproxy-cli.js >wsproxy-cli-${i}.log <&- 2>&1 &
 	pid=$!
