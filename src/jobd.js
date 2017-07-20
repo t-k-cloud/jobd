@@ -10,8 +10,8 @@ var bodyParser = require('body-parser');
 
 var userid = require('userid');
 var spawn = require('child_process').spawn;
-//var shellQuote = require('shell-quote');
-var spawn = require('child_process').spawn;
+
+var extend = require('util')._extend;
 
 var args = process.argv;
 
@@ -35,6 +35,16 @@ try {
 }
 
 console.log('starting ...');
+
+var env = {};
+try {
+	env = ini.parse(
+		fs.readFileSync(jobsdir + '/env.cfg', 'utf-8')
+	);
+} catch (e) {
+	console.log(e.message);
+}
+
 var cfgFiles = [];
 
 fs.readdirSync(jobsdir).forEach(function (filename) {
@@ -179,9 +189,6 @@ app.get('/', function (req, res) {
 			ug = curuser;
 		}
 
-		if (targetProps['env'])
-			cmd = targetProps['env'] + ';' + cmd;
-
 		let doCmd = function () {
 			console.log('Run as ' + ug + ': ' + cmd);
 			jobrun(cmd, cwd, ug, ug, loop.next, loop.again);
@@ -210,22 +217,21 @@ console.log('listening...');
 app.listen(3001);
 
 function jobrun(cmd, cwd, user, group, next, again) {
-//	let cmdArgs = shellQuote.parse(cmd);
-//	let cmdPath = cmdArgs.shift();
+	let defaultEnv = {
+		'PATH': process.env['PATH'],
+		'JOBSDIR': jobsdir,
+		'USER': user,
+		'USERNAME': user,
+		'HOME': (user == 'root') ? '/root' :
+								   '/home/' + user,
+		'SHELL': '/bin/sh'
+	};
 
 	// run
 	var proc = spawn('/bin/sh', ['-c', cmd], {
 		'uid': userid.uid(user),
 		'gid': userid.gid(group),
-		'env': {
-			'PATH': process.env['PATH'],
-			'JOBSDIR': jobsdir,
-			'USER': user,
-			'USERNAME': user,
-			'HOME': (user == 'root') ? '/root' :
-			                           '/home/' + user,
-			'SHELL': '/bin/sh'
-		},
+		'env': extend(env, defaultEnv),
 		'cwd': cwd
 	});
 
