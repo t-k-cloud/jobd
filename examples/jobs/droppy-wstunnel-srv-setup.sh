@@ -1,6 +1,4 @@
 #!/bin/sh
-curdir=$(cd $(dirname $0) && pwd)
-
 ssh 'ubuntu@211.159.189.25' 'bash -s' << EOF
 if [ ! -e ~/wsproxy ]; then
 	git clone https://github.com/t-k-cloud/wsproxy ~/wsproxy;

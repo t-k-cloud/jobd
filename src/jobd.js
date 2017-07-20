@@ -10,7 +10,7 @@ var bodyParser = require('body-parser');
 
 var userid = require('userid');
 var spawn = require('child_process').spawn;
-var shellQuote = require('shell-quote');
+//var shellQuote = require('shell-quote');
 var spawn = require('child_process').spawn;
 
 var args = process.argv;
@@ -165,6 +165,9 @@ app.get('/', function (req, res) {
 			ug = curuser;
 		}
 
+		if (targetProps['env'])
+			cmd = targetProps['env'] + ';' + cmd;
+
 		let doCmd = function () {
 			console.log('Run as ' + ug + ': ' + cmd);
 			jobrun(cmd, cwd, ug, ug, loop.next, loop.again);
@@ -193,11 +196,11 @@ console.log('listening...');
 app.listen(3001);
 
 function jobrun(cmd, cwd, user, group, next, again) {
-	let cmdArgs = shellQuote.parse(cmd);
-	let cmdPath = cmdArgs.shift();
+//	let cmdArgs = shellQuote.parse(cmd);
+//	let cmdPath = cmdArgs.shift();
 
 	// run
-	var proc = spawn(cmdPath, cmdArgs, {
+	var proc = spawn('/bin/sh', ['-c', cmd], {
 		'uid': userid.uid(user),
 		'gid': userid.gid(group),
 		'env': {
