@@ -20,6 +20,9 @@ $(document).ready(function () {
 			for (var i in depArr) {
 				graphDef += node + ' -.-> ' + depArr[i] + "\n";
 			}
+			if (depArr.length == 0) {
+				graphDef += node + "\n";
+			}
 		}
 
 		mermaidAPI.render('mermsvg', graphDef, function(svg){
