@@ -66,6 +66,7 @@ function runJob(user, cfgEnv, targetProps, jobsdir, loop) {
 
 	// joint node does not have a `cmd', skip it
 	if (cmd == '') {
+		console.log('No command to run here, skip.');
 		setTimeout(loop.next, 500);
 		return;
 	}
