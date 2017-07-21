@@ -4,7 +4,7 @@ var execSync = require('child_process').execSync;
 var path = require('path');
 
 var jobsldr = require('../src/jobsldr.js');
-var routeHandler = require('../src/route-handler.js');
+var routeHandler = require('../src/jobd-handler.js');
 
 /* arguments parsing */
 var args = process.argv;
@@ -14,8 +14,8 @@ if (3 != args.length) {
 	process.exit(1);
 }
 
-var curuser = args[2];
-var workdir = '/home/' + curuser;
+var user = args[2];
+var workdir = '/home/' + user;
 var jobsdir = workdir + '/jobs';
 var logsdir = workdir + '/jobs-log';
 
@@ -45,6 +45,10 @@ console.log(jobs.depGraph.overallOrder());
 
 /* starting jobd */
 console.log('jobd starting ...');
+
+process.stdin.on('error', function () {
+	console.log('main process stdin error!!!');
+});
 
 app = express();
 app.use(bodyParser.json());
@@ -78,9 +82,7 @@ app.get('/', function (req, res) {
 	res.sendFile(path.resolve('../src/query.html'));
 
 }).post('/run', function (req, res) {
-	let reqJson = req.body;
-	console.log('Query: ' + JSON.stringify(reqJson));
-	routeHandler.handle_query(reqJson, res, jobsdir, jobs);
+	routeHandler.handle_query(req, res, user, jobsdir, jobs);
 });
 
 console.log('listening...');
