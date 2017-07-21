@@ -2,8 +2,6 @@
 curdir=$(cd $(dirname $0) && pwd)
 source $curdir/env.cfg
 
-alias ssh="$SSHPASS ssh"
-
 ssh $SSHTO 'bash -s' -- < $curdir/gitrepo-mirror.sh \
 	https://github.com/t-k-cloud/wsproxy '~/wsproxy'
 
