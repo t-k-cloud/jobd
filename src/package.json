@@ -1,9 +1,6 @@
 {
   "dependencies": {
-    "body-parser": "^1.17.2",
     "dependency-graph": "^0.5.0",
-    "express": "^4.15.3",
-    "shell-quote": "^1.6.1",
     "userid": "^0.3.1"
   }
 }

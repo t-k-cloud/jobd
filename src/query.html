@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="vendor/jquery.min.js"></script>
+<script>
+$(document).ready(function () {
+	$("#query").click(function() {
+		$.ajax({
+			method: "POST",
+			url:"run",
+			contentType: "application/json; charset=utf-8",
+			dataType: "json" /* expecting data type */,
+			data: JSON.stringify({
+				type: $("#type").val(),
+				target: $("#target").val()
+			})
+		}).done(function (msg) {
+			$("#retjson").text(JSON.stringify(msg, null, 2));
+		});
+	});
+});
+</script>
+</head>
+<body>
+<h3>Query</h3>
+<select id="type">
+<option value="unit">unit</option>
+<option value="goal">goal</option>
+</select>
+<input  id="target" placeholder="target name"
+        style="width:70%"/>
+<button id="query">query</button>
+
+<h3>Return JSON</h3>
+<span id="retjson" style="color:gray"></span></p>
+</body>
+</html>

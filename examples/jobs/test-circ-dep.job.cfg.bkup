@@ -1,0 +1,8 @@
+[job-a]
+dep[] = test-circ-dep:job-b
+
+[job-b]
+dep[] = test-circ-dep:job-c
+
+[job-c]
+dep[] = test-circ-dep:job-a
