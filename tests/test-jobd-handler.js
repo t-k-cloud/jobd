@@ -81,9 +81,8 @@ app.get('/', function (req, res) {
 }).get('/query', function (req, res) {
 	res.sendFile(path.resolve('../src/query.html'));
 
-}).get('/stdin', function (req, res) {
-	process.stdin.push('hello\n');
-	res.json({'res': 'done'});
+}).post('/stdin', function (req, res) {
+	routeHandler.handle_stdin(req, res);
 
 }).post('/run', function (req, res) {
 	routeHandler.handle_query(req, res, user, jobsdir, jobs);

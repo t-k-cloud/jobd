@@ -18,6 +18,20 @@ $(document).ready(function () {
 			$("#retjson").text(JSON.stringify(msg, null, 2));
 		});
 	});
+
+	$("#stdin-button").click(function() {
+		$.ajax({
+			method: "POST",
+			url:"stdin",
+			contentType: "application/json; charset=utf-8",
+			dataType: "json" /* expecting data type */,
+			data: JSON.stringify({
+				'stdin': $("#stdin-string").val(),
+			})
+		}).done(function (msg) {
+			$("#retjson").text(JSON.stringify(msg, null, 2));
+		});
+	});
 });
 </script>
 </head>
@@ -30,6 +44,11 @@ $(document).ready(function () {
 <input  id="target" placeholder="target name"
         style="width:70%"/>
 <button id="query">query</button>
+
+<h3>Stdin</h3>
+<input  id="stdin-string" placeholder="standard input"
+        style="width:70%"/>
+<button id="stdin-button">input</button>
 
 <h3>Return JSON</h3>
 <span id="retjson" style="color:gray"></span></p>

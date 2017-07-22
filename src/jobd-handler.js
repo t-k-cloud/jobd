@@ -10,7 +10,20 @@ exports.handle_deps = function (req, res, depGraph) {
 		let deps = props.dep || [];
 		retobj[n] = deps;
 	});
-	res.json(retobj);
+
+	res.json({'res': 'successful', 'deps': retobj});
+};
+
+exports.handle_stdin = function (req, res) {
+	let reqJson = req.body;
+	let stdinStr = reqJson['stdin'] || '';
+
+	try {
+		process.stdin.push(stdinStr + '\n');
+		res.json({'res': 'successful'});
+	} catch (e) {
+		res.json({'res': e.message});
+	}
 };
 
 exports.handle_query = function (req, res, user, jobsdir, jobs) {
@@ -25,7 +38,7 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	try {
 		targetProps = jobs.depGraph.getNodeData(target);
 	} catch (e) {
-		res.json({"error": e.message});
+		res.json({"res": e.message});
 		return;
 	}
 
@@ -45,7 +58,7 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	}
 
 	/* return client runList */
-	res.json({"runList": runList});
+	res.json({"res": 'successful', "runList": runList});
 
 	syncLoop(runList, function (arr, idx, loop) {
 		let jobname = arr[idx];
