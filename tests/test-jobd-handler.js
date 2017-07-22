@@ -46,8 +46,8 @@ console.log(jobs.depGraph.overallOrder());
 /* starting jobd */
 console.log('jobd starting ...');
 
-process.stdin.on('error', function () {
-	console.log('main process stdin error!!!');
+process.stdin.on('error', function (e) {
+	console.log('main process stdin error: ' + e.message);
 });
 
 app = express();
@@ -80,6 +80,10 @@ app.get('/', function (req, res) {
 
 }).get('/query', function (req, res) {
 	res.sendFile(path.resolve('../src/query.html'));
+
+}).get('/stdin', function (req, res) {
+	process.stdin.push('hello\n');
+	res.json({'res': 'done'});
 
 }).post('/run', function (req, res) {
 	routeHandler.handle_query(req, res, user, jobsdir, jobs);

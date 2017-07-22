@@ -28,7 +28,8 @@ exports.spawn = function(cmd, opt, onSucc, onFail) {
 	/* on exit... */
 	runner.on('exit', function (exitcode) {
 		process.stdin.unpipe(runner.stdin);
-		process.stdin.end();
+		process.stdin.resume();
+		process.stdin.pause();
 
 		if (exitcode == 0) {
 			setTimeout(onSucc, 500);
