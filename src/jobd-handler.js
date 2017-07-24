@@ -62,17 +62,18 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 
 	syncLoop(runList, function (arr, idx, loop) {
 		let jobname = arr[idx];
-		let targetProps = jobs.depGraph.getNodeData(jobname);
 
 		console.log('Starting to run: ' + jobname);
-		runJob(user, jobs.env, targetProps, jobsdir, loop);
+		runJob(jobname, user, jobs, jobsdir, loop);
 	}, function (arr, idx) {
 		console.log('final job done: ' + arr[idx]);
 	});
 };
 
-function runJob(user, cfgEnv, targetProps, jobsdir, loop) {
-	// parse targetProps
+function runJob(jobname, user, jobs, jobsdir, loop) {
+	// parse
+	let cfgEnv = jobs.env;
+	let targetProps = jobs.depGraph.getNodeData(jobname);
 	let cmd = targetProps['exe'] || '';
 	let cwd = targetProps['cwd'] || '.';
 	let exer = targetProps['exer'] || user;
@@ -97,26 +98,37 @@ function runJob(user, cfgEnv, targetProps, jobsdir, loop) {
 
 	// construct spawn options
 	let opts = {
+		'logName': jobname,
 		'env': env,
 		'cwd': cwd,
 		'user': exer,
 		'group': exer
 	};
 
+	// log function
+	let logger = function (jobname, output) {
+		output.split('\n').forEach(function (line) {
+			console.log(jobname + ': ' + line);
+		});
+	};
+
 	// actually run command(s)
 	let runMainCmd = function () {
 		console.log('cmd: ' + cmd);
-		jobRunner.spawn(cmd, opts, loop.next, loop.again);
+		jobRunner.spawn(cmd, opts, logger,
+		                loop.next, loop.again);
 	};
 
 	if (targetProps['if']) {
 		let ifcmd = targetProps['if'];
 		console.log('if cmd: ' + ifcmd);
-		jobRunner.spawn(ifcmd, opts, runMainCmd, loop.next);
+		jobRunner.spawn(ifcmd, opts, logger,
+		                runMainCmd, loop.next);
 	} else if (targetProps['if_not']) {
 		let incmd = targetProps['if_not'];
 		console.log('if-not cmd: ' + incmd);
-		jobRunner.spawn(incmd, opts, loop.next, runMainCmd);
+		jobRunner.spawn(incmd, opts, logger,
+		                loop.next, runMainCmd);
 	} else {
 		runMainCmd();
 	}

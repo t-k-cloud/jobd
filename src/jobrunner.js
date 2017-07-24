@@ -1,10 +1,11 @@
 var userid = require('userid');
 var pty = require('pty.js');
 
-exports.spawn = function(cmd, opt, onSucc, onFail) {
+exports.spawn = function(cmd, opt, onOutput, onSucc, onFail) {
 	/* parameter process */
 	let env = opt.env || {};
 	let cwd = opt.cwd || '.';
+	let logName = opt.logName || 'unknown';
 	let user = opt.user || process.env['USER'];
 	let group = opt.group || process.env['USER'];
 	cwd = cwd.replace('~', '/home/' + user);
@@ -39,7 +40,7 @@ exports.spawn = function(cmd, opt, onSucc, onFail) {
 
 	/* output std & stderr */
 	runner.on('data', function (output) {
-		console.log(output);
+		onOutput(logName, output);
 	});
 
 	return runner;
