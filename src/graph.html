@@ -15,8 +15,9 @@ $(document).ready(function () {
 		dataType: "json" /* expecting data type */
 	}).done(function (retjson) {
 		var graphDef = 'graph LR \n';
-		for (var node in retjson) {
-			var depArr = retjson[node];
+		var deps = retjson['deps'] || {};
+		for (var node in deps) {
+			var depArr = deps[node];
 			for (var i in depArr) {
 				graphDef += node + ' -.-> ' + depArr[i] + "\n";
 			}
