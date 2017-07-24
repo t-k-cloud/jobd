@@ -5,7 +5,6 @@ exports.spawn = function(cmd, opt, onOutput, onSucc, onFail) {
 	/* parameter process */
 	let env = opt.env || {};
 	let cwd = opt.cwd || '.';
-	let logName = opt.logName || 'unknown';
 	let user = opt.user || process.env['USER'];
 	let group = opt.group || process.env['USER'];
 	cwd = cwd.replace('~', '/home/' + user);
@@ -39,9 +38,7 @@ exports.spawn = function(cmd, opt, onOutput, onSucc, onFail) {
 	});
 
 	/* output std & stderr */
-	runner.on('data', function (output) {
-		onOutput(logName, output);
-	});
+	runner.on('data', onOutput);
 
 	return runner;
 }

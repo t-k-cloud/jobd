@@ -1,6 +1,10 @@
+var fs = require('fs');
 var syncLoop = require('./syncloop.js').syncLoop;
 var jobRunner = require('./jobrunner.js');
 var extend = require('util')._extend;
+var joblogger = require('./joblogger.js');
+
+var logfvol = 10;
 
 exports.handle_deps = function (req, res, depGraph) {
 	let nodes = depGraph.overallOrder();
@@ -98,7 +102,6 @@ function runJob(jobname, user, jobs, jobsdir, loop) {
 
 	// construct spawn options
 	let opts = {
-		'logName': jobname,
 		'env': env,
 		'cwd': cwd,
 		'user': exer,
@@ -106,9 +109,13 @@ function runJob(jobname, user, jobs, jobsdir, loop) {
 	};
 
 	// log function
-	let logger = function (jobname, output) {
+	let logdir = jobsdir + '/logs';
+	if (!fs.existsSync(logdir)) { fs.mkdirSync(logdir); }
+
+	let logger = function (output) {
 		output.split('\n').forEach(function (line) {
-			console.log(jobname + ': ' + line);
+			//console.log(jobname + ': ' + line);
+			joblogger.log(jobname, logdir, line, logfvol);
 		});
 	};
 

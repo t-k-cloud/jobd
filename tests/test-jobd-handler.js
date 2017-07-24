@@ -17,7 +17,6 @@ if (3 != args.length) {
 var user = args[2];
 var workdir = '/home/' + user;
 var jobsdir = workdir + '/jobs';
-var logsdir = workdir + '/jobs-log';
 
 /* root/jobsdir tester */
 try {
