@@ -1,5 +1,5 @@
 var userid = require('userid');
-var spawn = require('child_process').spawn;
+var pty = require('pty.js');
 
 exports.spawn = function(cmd, opt, onSucc, onFail) {
 	/* parameter process */
@@ -10,24 +10,23 @@ exports.spawn = function(cmd, opt, onSucc, onFail) {
 	cwd = cwd.replace('~', '/home/' + user);
 
 	/* spawn runner process */
-	var runner = spawn('/bin/sh', ['-c', cmd], {
+	var runner = pty.spawn('/bin/sh', ['-c', cmd], {
 		'uid': userid.uid(user),
 		'gid': userid.gid(group),
 		'cwd': cwd,
-		'env': env
+		'env': env,
+		'cols': 80,
+		'rows': 30,
+		'name': 'xterm-color'
 	});
 	console.log('PID = #' + runner.pid);
 
-	/* set output encoding */
-	runner.stdout.setEncoding('utf8');
-	runner.stderr.setEncoding('utf8');
-
 	/* pipe stdin into this process */
-	process.stdin.pipe(runner.stdin);
+	process.stdin.pipe(runner);
 
 	/* on exit... */
 	runner.on('exit', function (exitcode) {
-		process.stdin.unpipe(runner.stdin);
+		process.stdin.unpipe(runner);
 		process.stdin.resume();
 		process.stdin.pause();
 
@@ -38,24 +37,9 @@ exports.spawn = function(cmd, opt, onSucc, onFail) {
 		}
 	});
 
-	/* common error handlers */
-	runner.stdout.on('error', function () {
-		console.log('stdout err on PID = #' + runner.pid);
-	});
-	runner.stderr.on('error', function () {
-		console.log('stderr err on PID = #' + runner.pid);
-	});
-	runner.stdin.on('error', function () {
-		console.log('stdin err on PID = #' + runner.pid);
-	});
-
-	runner.stdout.on('data', function (data) {
-		var str = data.toString()
-		console.log(str);
-	});
-	runner.stderr.on('data', function (data) {
-		var str = data.toString()
-		console.log(str);
+	/* output std & stderr */
+	runner.on('data', function (output) {
+		console.log(output);
 	});
 
 	return runner;
