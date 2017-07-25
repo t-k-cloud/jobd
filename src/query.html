@@ -16,7 +16,7 @@ $(document).ready(function () {
 			})
 		}).done(function (msg) {
 			$("#retjson").text(JSON.stringify(msg, null, 2));
-			pullLog();
+			setTimeout(pullLog, 500);
 		});
 	});
 
@@ -31,7 +31,7 @@ $(document).ready(function () {
 			})
 		}).done(function (msg) {
 			$("#retjson").text(JSON.stringify(msg, null, 2));
-			pullLog();
+			setTimeout(pullLog, 500);
 		});
 	});
 

@@ -19,7 +19,6 @@ exports.spawn = function(cmd, opt, onOutput, onSucc, onFail) {
 		'rows': 30,
 		'name': 'xterm-color'
 	});
-	console.log('PID = #' + runner.pid);
 
 	/* pipe stdin into this process */
 	process.stdin.pipe(runner);

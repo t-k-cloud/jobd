@@ -4,10 +4,15 @@ var jobRunner = require('./jobrunner.js');
 var extend = require('util')._extend;
 var logger = require('./joblogger.js');
 
-var fv_all = 15;
-var fv_one = 100;
+var fv_all = 20;
+var fv_one = 500;
 
 function getLogdir(jobsdir) { return jobsdir + '/logs'; }
+
+function log(logdir, line) {
+	console.log('log: ' + line);
+	logger.log(logger.logAll, logdir, line, fv_all);
+}
 
 exports.handle_log = function (jobsdir, jobname, res) {
 	let logdir = getLogdir(jobsdir);
@@ -48,7 +53,9 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	let target = reqJson['target'] || '';
 	let targetProps = {};
 	let runList = [];
-	console.log('Query: ' + JSON.stringify(reqJson));
+	let logdir = getLogdir(jobsdir);
+
+	log(logdir, 'Query: ' + JSON.stringify(reqJson));
 
 	/* get target properties */
 	try {
@@ -79,10 +86,10 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	syncLoop(runList, function (arr, idx, loop) {
 		let jobname = arr[idx];
 
-		console.log('Starting to run: ' + jobname);
+		log(logdir, 'Starting to run: ' + jobname);
 		runJob(jobname, user, jobs, jobsdir, loop);
 	}, function (arr, idx) {
-		console.log('final job done: ' + arr[idx]);
+		log(logdir, 'final job done: ' + arr[idx]);
 	});
 };
 
@@ -93,10 +100,11 @@ function runJob(jobname, user, jobs, jobsdir, loop) {
 	let cmd = targetProps['exe'] || '';
 	let cwd = targetProps['cwd'] || '.';
 	let exer = targetProps['exer'] || user;
+	let logdir = getLogdir(jobsdir);
 
 	// joint node does not have a `cmd', skip it
 	if (cmd == '') {
-		console.log('No command to run here, skip.');
+		log(logdir, 'No command to run here, skip.');
 		setTimeout(loop.next, 500);
 		return;
 	}
@@ -121,7 +129,6 @@ function runJob(jobname, user, jobs, jobsdir, loop) {
 	};
 
 	// log function
-	let logdir = getLogdir(jobsdir);
 	if (!fs.existsSync(logdir)) { fs.mkdirSync(logdir); }
 
 	let logfun = function (output) {
@@ -134,21 +141,24 @@ function runJob(jobname, user, jobs, jobsdir, loop) {
 
 	// actually run command(s)
 	let runMainCmd = function () {
-		console.log('cmd: ' + cmd);
-		jobRunner.spawn(cmd, opts, logfun,
-		                loop.next, loop.again);
+		log(logdir, 'cmd: ' + cmd);
+		let runner = jobRunner.spawn(cmd, opts, logfun,
+		                             loop.next, loop.again);
+		log(logdir, 'PID = #' + runner.pid);
 	};
 
 	if (targetProps['if']) {
 		let ifcmd = targetProps['if'];
-		console.log('if cmd: ' + ifcmd);
-		jobRunner.spawn(ifcmd, opts, logfun,
-		                runMainCmd, loop.next);
+		log(logdir, 'if cmd: ' + ifcmd);
+		let runner = jobRunner.spawn(ifcmd, opts, logfun,
+		                             runMainCmd, loop.next);
+		log(logdir, 'PID = #' + runner.pid);
 	} else if (targetProps['if_not']) {
 		let incmd = targetProps['if_not'];
-		console.log('if-not cmd: ' + incmd);
-		jobRunner.spawn(incmd, opts, logfun,
-		                loop.next, runMainCmd);
+		log(logdir, 'if-not cmd: ' + incmd);
+		let runner = jobRunner.spawn(incmd, opts, logfun,
+		                             loop.next, runMainCmd);
+		log(logdir, 'PID = #' + runner.pid);
 	} else {
 		runMainCmd();
 	}
