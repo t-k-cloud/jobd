@@ -47,14 +47,15 @@ $(document).ready(function () {
 	}
 
 	$("#refresh-log").click(function() { pullLog(); });
+	$("#retjson").text(JSON.stringify({}));
 });
 </script>
 </head>
 <body>
 <h3>Query</h3>
 <select id="type">
-<option value="unit">unit</option>
 <option value="goal">goal</option>
+<option value="unit">unit</option>
 </select>
 <input  id="target" placeholder="target name"
         style="width:70%"/>
