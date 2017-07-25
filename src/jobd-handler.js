@@ -4,7 +4,8 @@ var jobRunner = require('./jobrunner.js');
 var extend = require('util')._extend;
 var logger = require('./joblogger.js');
 
-var logfvol = 100;
+var fv_all = 15;
+var fv_one = 100;
 
 function getLogdir(jobsdir) { return jobsdir + '/logs'; }
 
@@ -126,8 +127,8 @@ function runJob(jobname, user, jobs, jobsdir, loop) {
 	let logfun = function (output) {
 		output.split('\n').forEach(function (line) {
 			//console.log(jobname + ': ' + line);
-			logger.log(logger.logAll, logdir, line, logfvol);
-			logger.log(jobname, logdir, line, logfvol);
+			logger.log(logger.logAll, logdir, line, fv_all);
+			logger.log(jobname, logdir, line, fv_one);
 		});
 	};
 

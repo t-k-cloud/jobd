@@ -16,6 +16,7 @@ $(document).ready(function () {
 			})
 		}).done(function (msg) {
 			$("#retjson").text(JSON.stringify(msg, null, 2));
+			pullLog();
 		});
 	});
 
@@ -30,8 +31,22 @@ $(document).ready(function () {
 			})
 		}).done(function (msg) {
 			$("#retjson").text(JSON.stringify(msg, null, 2));
+			pullLog();
 		});
 	});
+
+	function pullLog() {
+		$.ajax({
+			method: "GET",
+			url:"log/all",
+			contentType: "application/text; charset=utf-8",
+			dataType: "text" /* expecting data type */
+		}).done(function (log) {
+			$("#log").text(log);
+		});
+	}
+
+	$("#refresh-log").click(function() { pullLog(); });
 });
 </script>
 </head>
@@ -51,6 +66,11 @@ $(document).ready(function () {
 <button id="stdin-button">input</button>
 
 <h3>Return JSON</h3>
-<span id="retjson" style="color:gray"></span></p>
+<span id="retjson" style="color:gray"></span>
+
+<h3>Log</h3>
+<pre id="log" style="background:black;color:gray;">
+</pre>
+<button id="refresh-log">refresh</button>
 </body>
 </html>
