@@ -2,9 +2,20 @@ var fs = require('fs');
 var syncLoop = require('./syncloop.js').syncLoop;
 var jobRunner = require('./jobrunner.js');
 var extend = require('util')._extend;
-var joblogger = require('./joblogger.js');
+var logger = require('./joblogger.js');
 
-var logfvol = 10;
+var logfvol = 100;
+
+function getLogdir(jobsdir) { return jobsdir + '/logs'; }
+
+exports.handle_log = function (jobsdir, jobname, res) {
+	let logdir = getLogdir(jobsdir);
+	logger.read(jobname, logdir, function (lines) {
+		res.write(lines);
+	}, function () {
+		res.end();
+	});
+};
 
 exports.handle_deps = function (req, res, depGraph) {
 	let nodes = depGraph.overallOrder();
@@ -109,32 +120,33 @@ function runJob(jobname, user, jobs, jobsdir, loop) {
 	};
 
 	// log function
-	let logdir = jobsdir + '/logs';
+	let logdir = getLogdir(jobsdir);
 	if (!fs.existsSync(logdir)) { fs.mkdirSync(logdir); }
 
-	let logger = function (output) {
+	let logfun = function (output) {
 		output.split('\n').forEach(function (line) {
 			//console.log(jobname + ': ' + line);
-			joblogger.log(jobname, logdir, line, logfvol);
+			logger.log(logger.logAll, logdir, line, logfvol);
+			logger.log(jobname, logdir, line, logfvol);
 		});
 	};
 
 	// actually run command(s)
 	let runMainCmd = function () {
 		console.log('cmd: ' + cmd);
-		jobRunner.spawn(cmd, opts, logger,
+		jobRunner.spawn(cmd, opts, logfun,
 		                loop.next, loop.again);
 	};
 
 	if (targetProps['if']) {
 		let ifcmd = targetProps['if'];
 		console.log('if cmd: ' + ifcmd);
-		jobRunner.spawn(ifcmd, opts, logger,
+		jobRunner.spawn(ifcmd, opts, logfun,
 		                runMainCmd, loop.next);
 	} else if (targetProps['if_not']) {
 		let incmd = targetProps['if_not'];
 		console.log('if-not cmd: ' + incmd);
-		jobRunner.spawn(incmd, opts, logger,
+		jobRunner.spawn(incmd, opts, logfun,
 		                loop.next, runMainCmd);
 	} else {
 		runMainCmd();

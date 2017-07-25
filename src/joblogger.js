@@ -1,6 +1,8 @@
 var fs = require("fs");
 var loggers = {};
 
+exports.logAll = 'all'
+
 function loggerEach(path, name, callbk, select) {
 	let file0 = path + '/' + name + '.0.log';
 	let file1 = path + '/' + name + '.1.log';
@@ -50,32 +52,31 @@ function loggerWrite(path, name, data, fvol) {
 	logger['prev'] = now;
 }
 
-function cat(filepath, callbk) {
+function cat(filepath, onData) {
 	try{
 		fs.accessSync(filepath, fs.F_OK);
 	} catch(e) {
 		return;
 	}
 
-	fs.readFile(filepath, "utf8", (err, data) => {
-		if (err) {
-			console.log('read error: ' + filepath);
-			return;
-		}
-		callbk(data);
-	});
+	onData(fs.readFileSync(filepath, "utf8"));
 }
 
-function loggerRead(path, name, callbk) {
+function loggerRead(path, name, onData, onEnd) {
 	let logger = loggerGet(path, name);
-	let now = parseInt(logger['cnt'] / logger['fvol']);
+	if (logger['fvol'] != undefined) {
+		let now = parseInt(logger['cnt'] / logger['fvol']);
 
-	loggerEach(path, name, function (f) {
-		cat(f, callbk);
-	}, (now + 1) % 2);
-	loggerEach(path, name, function (f) {
-		cat(f, callbk);
-	}, now);
+		loggerEach(path, name, function (f) {
+			cat(f, onData);
+		}, (now + 1) % 2);
+
+		loggerEach(path, name, function (f) {
+			cat(f, onData);
+		}, now);
+	}
+
+	if (onEnd != undefined) onEnd();
 }
 
 var timenow = function() {
@@ -87,14 +88,16 @@ exports.log = function (jobname, logsdir, output, fvol) {
 	output.split('\n').forEach(function (line) {
 		let logline = timenow() + ' | ' + line;
 
-		/* log to stdout */
-		console.log('[' + jobname + '] ' + logline);
+		if (jobname != exports.logAll) {
+			/* log to stdout */
+			console.log('[' + jobname + '] ' + logline);
+		}
 
 		/* log to file */
 		loggerWrite(logsdir, jobname, logline + '\n', fvol);
 	});
 };
 
-exports.read = function (jobname, logsdir, callbk) {
-	loggerRead(logsdir, jobname, callbk);
+exports.read = function (jobname, logsdir, onData, onEnd) {
+	loggerRead(logsdir, jobname, onData, onEnd);
 };

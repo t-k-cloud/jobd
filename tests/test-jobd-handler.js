@@ -83,6 +83,9 @@ app.get('/', function (req, res) {
 }).post('/stdin', function (req, res) {
 	routeHandler.handle_stdin(req, res);
 
+}).get('/log/:jobname', function (req, res) {
+	routeHandler.handle_log(jobsdir, req.params.jobname, res);
+
 }).post('/run', function (req, res) {
 	routeHandler.handle_query(req, res, user, jobsdir, jobs);
 });
