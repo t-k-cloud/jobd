@@ -23,6 +23,18 @@ exports.handle_log = function (jobsdir, jobname, res) {
 	});
 };
 
+exports.handle_show = function (jobs, jobname, res) {
+	let job = {};
+	try {
+		job = jobs.depGraph.getNodeData(jobname);
+	} catch (e) {
+		res.json({"res": e.message});
+		return;
+	}
+
+	res.json({"res": 'successful', 'job': job});
+};
+
 exports.handle_deps = function (req, res, depGraph) {
 	let nodes = depGraph.overallOrder();
 	let retobj = {};
