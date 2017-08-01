@@ -1,3 +1,4 @@
+var syncLoop = require('./syncloop.js').syncLoop;
 var extend = require('util')._extend;
 var userid = require('userid');
 var pty = require('pty.js');
@@ -43,13 +44,21 @@ var spawn = function(cmd, opt, onOutput, onSucc, onFail) {
 	return runner;
 }
 
-exports.run = function(jobname, user, jobs, loop, logfun) {
+var runSingle = function(jobname, user, jobs, loop, onlog) {
 	// parse
 	let cfgEnv = jobs.env;
 	let targetProps = jobs.depGraph.getNodeData(jobname);
 	let cmd = targetProps['exe'] || '';
 	let cwd = targetProps['cwd'] || '.';
 	let exer = targetProps['exer'] || user;
+
+
+	/* split on line feeds and pass into logger */
+	let logfun = function (lines) {
+		lines.split('\n').forEach(function (line) {
+			onlog(line);
+		});
+	};
 
 	// joint node does not have a `cmd', skip it
 	if (cmd == '') {
@@ -100,3 +109,18 @@ exports.run = function(jobname, user, jobs, loop, logfun) {
 		runMainCmd();
 	}
 };
+
+exports.run = function(runList, user, jobs, onBegin, onEnd, onLog) {
+	/* sync running */
+	syncLoop(runList, function (arr, idx, loop) {
+		let jobname = arr[idx];
+
+		onBegin(jobname);
+		runSingle(jobname, user, jobs, loop, function (logline) {
+			onLog(jobname, logline);
+		});
+	}, function (arr, idx) {
+		let jobname = arr[idx];
+		onEnd(jobname);
+	});
+}

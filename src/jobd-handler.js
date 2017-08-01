@@ -1,10 +1,9 @@
-var syncLoop = require('./syncloop.js').syncLoop;
 var jobRunner = require('./jobrunner.js');
 var logger = require('./joblogger.js');
 var fs = require('fs');
 
-var fv_all = 20;
-var fv_one = 500;
+const fv_all = 20;
+const fv_one = 500;
 
 function getLogdir(jobsdir) {
 	let logdir = jobsdir + '/logs';
@@ -103,19 +102,13 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	/* return client runList */
 	res.json({"res": 'successful', "runList": runList});
 
-	syncLoop(runList, function (arr, idx, loop) {
-		let jobname = arr[idx];
-
+	jobRunner.run(runList, user, jobs, function (jobname) {
 		masterLog(logdir, 'Starting to run: ' + jobname);
-		jobRunner.run(jobname, user, jobs, loop, function (output) {
-			/* split on line feeds and pass into logger */
-			output.split('\n').forEach(function (line) {
-				logger.write('all', logdir, line, fv_all);
-				logger.write(jobname, logdir, line, fv_one);
-				console.log('[' + jobname + '] ' + line);
-			});
-		});
-	}, function (arr, idx) {
-		masterLog(logdir, 'final job done: ' + arr[idx]);
+	}, function (jobname) {
+		masterLog(logdir, 'final job done: ' + jobname);
+	}, function (jobname, output) {
+		logger.write('all', logdir, output, fv_all);
+		logger.write(jobname, logdir, output, fv_one);
+		console.log('[' + jobname + '] ' + output);
 	});
 };
