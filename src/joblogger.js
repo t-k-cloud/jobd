@@ -1,8 +1,6 @@
 var fs = require("fs");
 var loggers = {};
 
-exports.logAll = 'all'
-
 function loggerEach(path, name, callbk, select) {
 	let file0 = path + '/' + name + '.0.log';
 	let file1 = path + '/' + name + '.1.log';
@@ -84,14 +82,9 @@ var timenow = function() {
 	replace(/T/, ' ').replace(/\..+/, '');
 };
 
-exports.log = function (jobname, logsdir, output, fvol) {
+exports.write = function (jobname, logsdir, output, fvol) {
 	output.split('\n').forEach(function (line) {
 		let logline = timenow() + ' | ' + line;
-
-		if (jobname != exports.logAll) {
-			/* log to stdout */
-			console.log('[' + jobname + '] ' + logline);
-		}
 
 		/* log to file */
 		loggerWrite(logsdir, jobname, logline + '\n', fvol);

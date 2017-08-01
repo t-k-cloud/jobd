@@ -67,6 +67,26 @@ function loadJobs(cfgFiles) {
 	return depGraph;
 }
 
+function setRuntimeProps(depGraph) {
+	depGraph.overallOrder().forEach(function (target) {
+		let targetProps = depGraph.getNodeData(target);
+
+		/* return code from last time */
+		targetProps.last_retcode = -1;
+
+		/* invoke/finish time-stamp */
+		targetProps.invoke_time = 0;
+		targetProps.finish_time = 0;
+
+		/* timer initialization */
+		if (targetProps.timer) {
+			targetProps.timer_running = false;
+		}
+	});
+
+	return depGraph;
+}
+
 exports.load = function (jobsdir) {
 	let env = loadEnvVar(jobsdir);
 	let jobFiles = getJobCfgFiles(jobsdir);
@@ -77,6 +97,9 @@ exports.load = function (jobsdir) {
 	 * circular-dependency.
 	 */
 	depGraph.overallOrder();
+
+	/* initialize cron jobs etc. */
+	depGraph = setRuntimeProps(depGraph);
 
 	return {
 		"env": env,
