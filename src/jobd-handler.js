@@ -17,6 +17,12 @@ function masterLog(logdir, line) {
 	logger.write('all', logdir, line, fv_all);
 }
 
+function slaveLog(jobname, logdir, line) {
+	logger.write(jobname, logdir, line, fv_one);
+	logger.write('all', logdir, line, fv_all);
+	console.log('[' + jobname + '] ' + line);
+}
+
 exports.handle_log = function (jobsdir, jobname, res) {
 	let logdir = getLogdir(jobsdir);
 	logger.read(jobname, logdir, function (lines) {
@@ -103,12 +109,15 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	res.json({"res": 'successful', "runList": runList});
 
 	jobRunner.run(runList, user, jobs, function (jobname) {
-		masterLog(logdir, 'Starting to run: ' + jobname);
+		masterLog(logdir, 'Starting to run: [' + jobname + ']');
+
+	}, function (jobname, ec) {
+		slaveLog(jobname, logdir, 'exitcode: ' + ec);
+
 	}, function (jobname) {
-		masterLog(logdir, 'final job done: ' + jobname);
-	}, function (jobname, output) {
-		logger.write('all', logdir, output, fv_all);
-		logger.write(jobname, logdir, output, fv_one);
-		console.log('[' + jobname + '] ' + output);
+		masterLog(logdir, 'final job done: [' + jobname + ']');
+
+	}, function (jobname, line) {
+		slaveLog(jobname, logdir, line);
 	});
 };

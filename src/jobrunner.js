@@ -3,7 +3,7 @@ var extend = require('util')._extend;
 var userid = require('userid');
 var pty = require('pty.js');
 
-var spawn = function(cmd, opt, onOutput, onSucc, onFail) {
+var spawn = function(cmd, opt, onOutput, onExit, onSucc, onFail) {
 	/* parameter process */
 	let env = opt.env || {};
 	let cwd = opt.cwd || '.';
@@ -31,6 +31,9 @@ var spawn = function(cmd, opt, onOutput, onSucc, onFail) {
 		process.stdin.resume();
 		process.stdin.pause();
 
+		/* callback */
+		onExit(exitcode);
+
 		if (exitcode == 0) {
 			setTimeout(onSucc, 500);
 		} else {
@@ -44,7 +47,7 @@ var spawn = function(cmd, opt, onOutput, onSucc, onFail) {
 	return runner;
 }
 
-var runSingle = function(jobname, user, jobs, loop, onlog) {
+var runSingle = function(jobname, user, jobs, loop, onlog, onJobExit) {
 	// parse
 	let cfgEnv = jobs.env;
 	let targetProps = jobs.depGraph.getNodeData(jobname);
@@ -52,6 +55,10 @@ var runSingle = function(jobname, user, jobs, loop, onlog) {
 	let cwd = targetProps['cwd'] || '.';
 	let exer = targetProps['exer'] || user;
 
+	/* define onExit function */
+	let onExit = function (exitcode) {
+		onJobExit(jobname, exitcode);
+	};
 
 	/* split on line feeds and pass into logger */
 	let logfun = function (lines) {
@@ -88,7 +95,7 @@ var runSingle = function(jobname, user, jobs, loop, onlog) {
 	// actually run command(s)
 	let runMainCmd = function () {
 		logfun('cmd: ' + cmd);
-		let runner = spawn(cmd, opts, logfun,
+		let runner = spawn(cmd, opts, logfun, onExit,
 		                   loop.next, loop.again);
 		logfun('PID = #' + runner.pid);
 	};
@@ -96,13 +103,13 @@ var runSingle = function(jobname, user, jobs, loop, onlog) {
 	if (targetProps['if']) {
 		let ifcmd = targetProps['if'];
 		logfun('if cmd: ' + ifcmd);
-		let runner = spawn(ifcmd, opts, logfun,
+		let runner = spawn(ifcmd, opts, logfun, onExit,
 		                   runMainCmd, loop.next);
 		logfun('PID = #' + runner.pid);
 	} else if (targetProps['if_not']) {
 		let incmd = targetProps['if_not'];
 		logfun('if-not cmd: ' + incmd);
-		let runner = spawn(incmd, opts, logfun,
+		let runner = spawn(incmd, opts, logfun, onExit,
 		                   loop.next, runMainCmd);
 		logfun('PID = #' + runner.pid);
 	} else {
@@ -110,17 +117,19 @@ var runSingle = function(jobname, user, jobs, loop, onlog) {
 	}
 };
 
-exports.run = function(runList, user, jobs, onBegin, onEnd, onLog) {
+exports.run = function(runList, user, jobs, onSpawn, onExit, onFinal, onLog) {
 	/* sync running */
 	syncLoop(runList, function (arr, idx, loop) {
 		let jobname = arr[idx];
 
-		onBegin(jobname);
+		onSpawn(jobname); /* callback */
+
 		runSingle(jobname, user, jobs, loop, function (logline) {
 			onLog(jobname, logline);
-		});
+		}, onExit /* callback */);
 	}, function (arr, idx) {
 		let jobname = arr[idx];
-		onEnd(jobname);
+
+		onFinal(jobname); /* callback */
 	});
 }
