@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "cron": "^1.2.1",
     "dependency-graph": "^0.5.0",
     "userid": "^0.3.1"
   }

@@ -89,6 +89,11 @@ app.get('/', function (req, res) {
 }).get('/show/:jobname', function (req, res) {
 	routeHandler.handle_show(jobs, req.params.jobname, res);
 
+}).get('/timerswitch/:jobname/:switch', function (req, res) {
+	let j = req.params.jobname || '';
+	let s = req.params['switch'] || 'off';
+	routeHandler.handle_timerswitch(j, s, jobs, res);
+
 }).post('/run', function (req, res) {
 	routeHandler.handle_query(req, res, user, jobsdir, jobs);
 });

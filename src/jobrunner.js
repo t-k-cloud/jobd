@@ -1,9 +1,11 @@
+var CronJob = require('cron').CronJob;
 var syncLoop = require('./syncloop.js').syncLoop;
 var extend = require('util')._extend;
 var userid = require('userid');
 var pty = require('pty.js');
 
-var spawn = function(cmd, opt, onOutput, onExit, onSucc, onFail) {
+var spawn = function(cmd, opt, onOutput, onExit,
+                     onSucc, onFail) {
 	/* parameter process */
 	let env = opt.env || {};
 	let cwd = opt.cwd || '.';
@@ -47,7 +49,8 @@ var spawn = function(cmd, opt, onOutput, onExit, onSucc, onFail) {
 	return runner;
 }
 
-var runSingle = function(jobname, user, jobs, loop, onlog, onJobExit) {
+var runSingle = function(jobname, user, jobs, loop,
+                         onlog, onJobExit) {
 	// parse
 	let cfgEnv = jobs.env;
 	let targetProps = jobs.depGraph.getNodeData(jobname);
@@ -117,16 +120,48 @@ var runSingle = function(jobname, user, jobs, loop, onlog, onJobExit) {
 	}
 };
 
-exports.run = function(runList, user, jobs, onSpawn, onExit, onFinal, onLog) {
+function scheduleJob(jobname, jobs, onLog, invokeFun)
+{
+	let targetProps = jobs.depGraph.getNodeData(jobname);
+	let cronJob = targetProps['cronJob'];
+	let cronTab = targetProps['timer'] || '';
+
+	/* stop previous running cronJob */
+	if (cronJob) cronJob.stop();
+
+	if (cronTab == '') {
+		invokeFun();
+	} else {
+		try {
+			cronJob = new CronJob(cronTab, function () {
+				onLog(jobname, " --- Timer out --- ");
+				invokeFun();
+			});
+		} catch(ex) {
+			onLog(jobname, "Bad cron pattern: " + cronTab);
+			return;
+		}
+
+		targetProps['cronJob'] = cronJob;
+		cronJob.start();
+	}
+}
+
+exports.run = function(runList, user, jobs, onSpawn,
+                       onExit, onFinal, onLog) {
 	/* sync running */
 	syncLoop(runList, function (arr, idx, loop) {
 		let jobname = arr[idx];
 
 		onSpawn(jobname); /* callback */
 
-		runSingle(jobname, user, jobs, loop, function (logline) {
-			onLog(jobname, logline);
-		}, onExit /* callback */);
+		/* schedule a time to run (can be immediately) */
+		scheduleJob(jobname, jobs, onLog, function () {
+			/* actually run */
+			runSingle(jobname, user, jobs, loop, function (l) {
+				onLog(jobname, l);
+			}, onExit /* callback */);
+		});
 	}, function (arr, idx) {
 		let jobname = arr[idx];
 

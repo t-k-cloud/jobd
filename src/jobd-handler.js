@@ -32,6 +32,15 @@ exports.handle_log = function (jobsdir, jobname, res) {
 	});
 };
 
+function omit(obj, omitKey) {
+	return Object.keys(obj).reduce((result, key) => {
+		if(key !== omitKey) {
+			result[key] = obj[key];
+		}
+		return result;
+	}, {});
+}
+
 exports.handle_show = function (jobs, jobname, res) {
 	let job = {};
 	try {
@@ -41,7 +50,19 @@ exports.handle_show = function (jobs, jobname, res) {
 		return;
 	}
 
-	res.json({"res": 'successful', 'job': job});
+	if (job['cronJob']) {
+		let switchOn = job['cronJob'].running;
+		res.json({
+			"res": 'successful',
+			'job': omit(job, 'cronJob'),
+			'cronRunning:': switchOn
+		});
+	} else {
+		res.json({
+			"res": 'successful',
+			'job': omit(job, 'cronJob')
+		});
+	}
 };
 
 exports.handle_deps = function (req, res, depGraph) {
@@ -68,6 +89,31 @@ exports.handle_stdin = function (req, res) {
 	}
 };
 
+exports.handle_timerswitch = function (jobname, switchVal,
+                                       jobs, res) {
+	let targetProps = {};
+	let cronJob = null;
+
+	try {
+		targetProps = jobs.depGraph.getNodeData(jobname);
+		cronJob = targetProps['cronJob'];
+	} catch (e) {
+		res.json({"res": e.message});
+		return;
+	}
+
+	if (switchVal == 'on') {
+		cronJob && cronJob.start();
+	} else if (switchVal == 'off') {
+		cronJob && cronJob.stop();
+	} else {
+		res.json({"res": 'Switch value can only be on/off.'});
+		return;
+	}
+
+	res.json({'res': 'successful'});
+};
+
 exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	let reqJson = req.body;
 	let type = reqJson['type'] || '';
@@ -86,6 +132,7 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	try {
 		targetProps = jobs.depGraph.getNodeData(target);
 	} catch (e) {
+		masterLog(logdir, e.message);
 		res.json({"res": e.message});
 		return;
 	}

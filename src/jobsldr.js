@@ -78,10 +78,8 @@ function setRuntimeProps(depGraph) {
 		targetProps.invoke_time = 0;
 		targetProps.finish_time = 0;
 
-		/* timer initialization */
-		if (targetProps.timer) {
-			targetProps.timer_running = false;
-		}
+		/* cron job instance */
+		targetProps.cronJob = null;
 	});
 
 	return depGraph;
