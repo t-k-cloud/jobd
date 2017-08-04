@@ -155,14 +155,17 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	/* return client runList */
 	res.json({"res": 'successful', "runList": runList});
 
-	jobRunner.run(runList, user, jobs, function (jobname) {
-		masterLog(logdir, 'Starting to run: [' + jobname + ']');
+	jobRunner.run(runList, user, jobs, function (jobname, props) {
+		masterLog(logdir, 'Start to run: [' + jobname + ']');
+		props['invoke_time'] = Date.now();
 
-	}, function (jobname, ec) {
-		slaveLog(jobname, logdir, 'exitcode: ' + ec);
+	}, function (jobname, props, exitcode) {
+		slaveLog(jobname, logdir, 'exitcode: ' + exitcode);
+		props['last_retcode'] = exitcode;
+		props['finish_time'] = Date.now();
 
 	}, function (jobname) {
-		masterLog(logdir, 'final job done: [' + jobname + ']');
+		masterLog(logdir, 'Final job done: [' + jobname + ']');
 
 	}, function (jobname, line) {
 		slaveLog(jobname, logdir, line);

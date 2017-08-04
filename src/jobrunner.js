@@ -60,7 +60,7 @@ var runSingle = function(jobname, user, jobs, loop,
 
 	/* define onExit function */
 	let onExit = function (exitcode) {
-		onJobExit(jobname, exitcode);
+		onJobExit(jobname, targetProps, exitcode);
 	};
 
 	/* split on line feeds and pass into logger */
@@ -130,12 +130,13 @@ function scheduleJob(jobname, jobs, onLog, invokeFun)
 	if (cronJob) cronJob.stop();
 
 	if (cronTab == '') {
-		invokeFun();
+		invokeFun(targetProps); /* invoke now */
+
 	} else {
 		try {
 			cronJob = new CronJob(cronTab, function () {
 				onLog(jobname, " --- Timer out --- ");
-				invokeFun();
+				invokeFun(targetProps); /* invoke later */
 			});
 		} catch(ex) {
 			onLog(jobname, "Bad cron pattern: " + cronTab);
@@ -153,10 +154,11 @@ exports.run = function(runList, user, jobs, onSpawn,
 	syncLoop(runList, function (arr, idx, loop) {
 		let jobname = arr[idx];
 
-		onSpawn(jobname); /* callback */
-
 		/* schedule a time to run (can be immediately) */
-		scheduleJob(jobname, jobs, onLog, function () {
+		scheduleJob(jobname, jobs, onLog, function (props) {
+
+			onSpawn(jobname, props); /* callback */
+
 			/* actually run */
 			runSingle(jobname, user, jobs, loop, function (l) {
 				onLog(jobname, l);
