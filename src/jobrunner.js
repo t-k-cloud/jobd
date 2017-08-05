@@ -5,7 +5,7 @@ var userid = require('userid');
 var pty = require('pty.js');
 
 var spawn = function(cmd, opt, onOutput, onExit,
-                     onSucc, onFail) {
+                     onSucc, onFail, onBreak) {
 	/* parameter process */
 	let env = opt.env || {};
 	let cwd = opt.cwd || '.';
@@ -34,7 +34,9 @@ var spawn = function(cmd, opt, onOutput, onExit,
 		process.stdin.pause();
 
 		/* callback */
-		onExit(exitcode);
+		if (onExit(exitcode, onBreak)) {
+			return;
+		}
 
 		if (exitcode == 0) {
 			setTimeout(onSucc, 500);
@@ -59,8 +61,9 @@ var runSingle = function(jobname, user, jobs, loop,
 	let exer = targetProps['exer'] || user;
 
 	/* define onExit function */
-	let onExit = function (exitcode) {
-		onJobExit(jobname, targetProps, exitcode);
+	let onExit = function (exitcode, onBreak) {
+		return onJobExit(jobname, targetProps,
+		                 exitcode, onBreak);
 	};
 
 	/* split on line feeds and pass into logger */
@@ -99,7 +102,7 @@ var runSingle = function(jobname, user, jobs, loop,
 	let runMainCmd = function () {
 		logfun('cmd: ' + cmd);
 		let runner = spawn(cmd, opts, logfun, onExit,
-		                   loop.next, loop.again);
+		                   loop.next, loop.again, loop.brk);
 		logfun('PID = #' + runner.pid);
 	};
 

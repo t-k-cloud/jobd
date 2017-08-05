@@ -5,6 +5,7 @@ var fs = require('fs');
 
 const fv_all = 20;
 const fv_one = 500;
+const maxFailsToBreak = 3;
 
 function getLogdir(jobsdir) {
 	let logdir = jobsdir + '/logs';
@@ -176,15 +177,33 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	/* return client runList */
 	res.json({"res": 'successful', "runList": runList});
 
+	/* fail counter, will break the loop if fail too many times */
+	let failCnt = 0;
+
 	jobRunner.run(runList, user, jobs, function (jobname, props) {
 		masterLog(logdir, 'Start to run: [' + jobname + ']');
 		hist.add(jobname); /* add into history list */
 		props['invoke_time'] = Date.now();
 
-	}, function (jobname, props, exitcode) {
+	}, function (jobname, props, exitcode, onBreak) {
 		slaveLog(jobname, logdir, 'exitcode: ' + exitcode);
 		props['last_retcode'] = exitcode;
 		props['finish_time'] = Date.now();
+
+		if (onBreak != undefined) {
+			if (exitcode == 0) {
+				failCnt = 0;
+			} else {
+				failCnt ++;
+				slaveLog(jobname, logdir, 'Fails: ' + failCnt);
+				if (failCnt >= maxFailsToBreak) {
+					onBreak();
+					return 1;
+				}
+			}
+		}
+
+		return 0;
 
 	}, function (jobname) {
 		masterLog(logdir, 'Final job done: [' + jobname + ']');

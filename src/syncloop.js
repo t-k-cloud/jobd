@@ -12,6 +12,10 @@ exports.syncLoop = function (arr, deed, done) {
 		again: function () {
 			deed(arr, idx, loop);
 		},
+		brk: function () {
+			idx = arr.length - 1;
+			done(arr, idx, loop);
+		}
 	};
 
 	loop.again();
