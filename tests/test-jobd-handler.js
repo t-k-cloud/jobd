@@ -30,7 +30,7 @@ try {
 /* load jobs/configs */
 var jobs = {};
 try {
-	jobs = jobsldr.load(workdir + '/jobs');
+	jobs = jobsldr.load(jobsdir);
 } catch (e) {
 	console.log(e.message);
 	process.exit(3);
@@ -63,22 +63,13 @@ app.get('/', function (req, res) {
 	routeHandler.handle_deps(req, res, jobs.depGraph);
 
 }).get('/reload', function (req, res) {
-	var newjobs = {};
-	try {
-		console.log('reloading jobs...');
-		newjobs = jobsldr.load(workdir + '/jobs');
-	} catch (e) {
-		console.log(e.message);
-		res.json({'res': e.message});
-		return;
-	}
-
-	/* replace jobs */
-	jobs = newjobs;
-	res.json({'res': 'successful'});
+	jobs = routeHandler.handle_reload(res, jobsldr, jobsdir, jobs);
 
 }).get('/query', function (req, res) {
 	res.sendFile(path.resolve('../src/query.html'));
+
+}).get('/hist', function (req, res) {
+	res.sendFile(path.resolve('../src/hist.html'));
 
 }).post('/stdin', function (req, res) {
 	routeHandler.handle_stdin(req, res);
@@ -93,6 +84,9 @@ app.get('/', function (req, res) {
 	let j = req.params.jobname || '';
 	let s = req.params['switch'] || 'off';
 	routeHandler.handle_timerswitch(j, s, jobs, res);
+
+}).get('/history', function (req, res) {
+	routeHandler.handle_hist(res);
 
 }).post('/run', function (req, res) {
 	routeHandler.handle_query(req, res, user, jobsdir, jobs);

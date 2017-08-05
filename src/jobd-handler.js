@@ -1,5 +1,6 @@
 var jobRunner = require('./jobrunner.js');
 var logger = require('./joblogger.js');
+var hist = require('./history.js');
 var fs = require('fs');
 
 const fv_all = 20;
@@ -55,7 +56,7 @@ exports.handle_show = function (jobs, jobname, res) {
 		res.json({
 			"res": 'successful',
 			'job': omit(job, 'cronJob'),
-			'cronRunning:': switchOn
+			'cronRunning': switchOn
 		});
 	} else {
 		res.json({
@@ -114,6 +115,26 @@ exports.handle_timerswitch = function (jobname, switchVal,
 	res.json({'res': 'successful'});
 };
 
+exports.handle_reload = function (res, jobsldr, jobsdir, jobs) {
+	var newjobs = {};
+	try {
+		console.log('reloading jobs...');
+		newjobs = jobsldr.load(jobsdir);
+	} catch (e) {
+		console.log(e.message);
+		res.json({'res': e.message});
+		return jobs;
+	}
+
+	res.json({'res': 'successful'});
+	hist.clear(); /* clear history */
+	return newjobs;
+};
+
+exports.handle_hist = function (res) {
+	res.json({'history': hist.get()});
+};
+
 exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	let reqJson = req.body;
 	let type = reqJson['type'] || '';
@@ -157,6 +178,7 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 
 	jobRunner.run(runList, user, jobs, function (jobname, props) {
 		masterLog(logdir, 'Start to run: [' + jobname + ']');
+		hist.add(jobname); /* add into history list */
 		props['invoke_time'] = Date.now();
 
 	}, function (jobname, props, exitcode) {
