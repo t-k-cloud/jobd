@@ -4,7 +4,7 @@ var extend = require('util')._extend;
 var userid = require('userid');
 var pty = require('pty.js');
 
-var spawn = function(cmd, opt, onOutput, onExit,
+exports.spawn = function(cmd, opt, onOutput, onExit,
                      onSucc, onFail, onBreak) {
 	/* parameter process */
 	let env = opt.env || {};
@@ -101,7 +101,7 @@ var runSingle = function(jobname, user, jobs, loop,
 	// actually run command(s)
 	let runMainCmd = function () {
 		logfun('cmd: ' + cmd);
-		let runner = spawn(cmd, opts, logfun, onExit,
+		let runner = exports.spawn(cmd, opts, logfun, onExit,
 		                   loop.next, loop.again, loop.brk);
 		logfun('PID = #' + runner.pid);
 	};
@@ -109,13 +109,13 @@ var runSingle = function(jobname, user, jobs, loop,
 	if (targetProps['if']) {
 		let ifcmd = targetProps['if'];
 		logfun('if cmd: ' + ifcmd);
-		let runner = spawn(ifcmd, opts, logfun, onExit,
+		let runner = exports.spawn(ifcmd, opts, logfun, onExit,
 		                   runMainCmd, loop.next);
 		logfun('PID = #' + runner.pid);
 	} else if (targetProps['if_not']) {
 		let incmd = targetProps['if_not'];
 		logfun('if-not cmd: ' + incmd);
-		let runner = spawn(incmd, opts, logfun, onExit,
+		let runner = exports.spawn(incmd, opts, logfun, onExit,
 		                   loop.next, runMainCmd);
 		logfun('PID = #' + runner.pid);
 	} else {

@@ -5,6 +5,8 @@ function (output) {
 	output.split('\n').forEach(function (line) {
 		console.log('ls root: ' + line);
 	});
+}, function (exitcode) {
+	console.log('exitcode: ', exitcode);
 }, function () {
 	console.log('Success');
 }, function (errcode) {
@@ -16,6 +18,8 @@ function (output) {
 	output.split('\n').forEach(function (line) {
 		console.log('ls home: ' + line);
 	});
+}, function (exitcode) {
+	console.log('exitcode: ', exitcode);
 }, function () {
 	console.log('Success');
 }, function (errcode) {
