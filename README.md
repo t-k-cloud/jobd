@@ -1,11 +1,14 @@
-Daemon
+Setup
 ======
-sudo jobd `whoami`
+```sh
+$ sudo ./setup.sh
+```
 
-Client
-======
-job-foo <target> <status>
+Test it
+=======
+```sh
+$ cd tests
+$ sudo ./test-jobd-handler.js `whoami`
+```
 
-job-goal nginx up
-job-unit nginx up
-job-srch nginx up
+Then open URL: 127.0.0.1:3001
