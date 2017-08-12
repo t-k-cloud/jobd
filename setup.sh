@@ -4,7 +4,7 @@ touch /root/test || exit
 
 # install commands used through jobs
 pacman --noconfirm -S nodejs yarn npm
-pacman --noconfirm -S ssh lsof rsync
+pacman --noconfirm -S openssh lsof rsync
 
 # create job directory under home
 ln -sf `pwd`/examples/jobs /home/tk/
@@ -18,3 +18,6 @@ popd
 pushd tests
 yarn install
 popd
+
+echo 'Test it:'
+echo 'cd tests; sudo node ./test-jobd-handler.js `whoami`'
