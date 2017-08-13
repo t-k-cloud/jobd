@@ -4,7 +4,8 @@ touch /root/test || exit
 
 # install commands used through jobs
 pacman --noconfirm -S nodejs yarn npm
-pacman --noconfirm -S openssh lsof rsync
+pacman --noconfirm -S lsof rsync
+pacman --noconfirm -S openssh # for ssh and scp
 
 # create job directory under home
 ln -sf `pwd`/examples/jobs /home/tk/
