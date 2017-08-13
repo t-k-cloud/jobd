@@ -1,4 +1,6 @@
-F=/etc/php/php.ini
+F=$(php --ini | grep Loaded | awk -F: '{gsub(/ /, "", $0); print $2}')
+
+echo "Patching PHP.ini file: $F"
 
 ###
 # change open_basedir and display_errors
