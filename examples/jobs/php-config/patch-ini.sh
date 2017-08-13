@@ -1,4 +1,4 @@
-F=$(php --ini | grep Loaded | awk -F: '{gsub(/ /, "", $0); print $2}')
+F=$(php-fpm7.0 -i | grep  '^Loaded Config' | awk -F'>' '{gsub(/ /, "", $0); print $2}')
 
 echo "Patching PHP.ini file: $F"
 
