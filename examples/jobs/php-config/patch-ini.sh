@@ -1,5 +1,7 @@
-F=$(php-fpm7.0 -i | grep  '^Loaded Config' | awk -F'>' '{gsub(/ /, "", $0); print $2}')
+FPM_CMD=$1 # php-fpm7.0 or php-fpm
+F=$($FPM_CMD -i | grep  '^Loaded Config' | awk -F'>' '{gsub(/ /, "", $0); print $2}')
 
+echo "php-fpm command: $FPM_CMD"
 echo "Patching PHP.ini file: $F"
 
 ###
