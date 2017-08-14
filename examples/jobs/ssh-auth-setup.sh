@@ -7,6 +7,10 @@ echo "$KEY"
 
 if [ ! -e $FILE ]; then
 	echo "$FILE not exits, creating...";
+	# create ~/.ssh
+	mkdir -p $(dirname $FILE);
+	chmod 700 $(dirname $FILE);
+	# create file
 	echo "" > $FILE;
 	chmod 600 $FILE;
 fi;
