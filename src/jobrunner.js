@@ -3,6 +3,7 @@ var syncLoop = require('./syncloop.js').syncLoop;
 var extend = require('util')._extend;
 var userid = require('userid');
 var pty = require('pty.js');
+var childProcess = require('child_process');
 
 exports.spawn = function(cmd, opt, onOutput, onExit,
                      onSucc, onFail, onBreak) {
@@ -13,8 +14,25 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	let group = opt.group || process.env['USER'];
 	cwd = cwd.replace('~', '/home/' + user);
 
+	let spawnFun = pty.spawn;
+	let stdout = function (o) {return o};
+	let stderr = function (o) {return {'on': function (d) {}}};
+	let stdin  = function (o) {return o};
+	let onLog  = function (o) {onOutput(o)};
+
+	if (opt.spawn == 'direct') {
+		spawnFun = childProcess.spawn;
+		stdout = function (o) {return o.stdout};
+		stderr = function (o) {return o.stderr};
+		stdin  = function (o) {return o.stdin};
+		onLog  = function (o) {onOutput(o.toString())};
+	} else if (opt.spawn != 'pty') {
+		onLog("spawn method unrecognized,");
+		onLog("fallback to 'pty'.");
+	}
+
 	/* spawn runner process */
-	var runner = pty.spawn('/bin/sh', ['-c', cmd], {
+	var runner = spawnFun('/bin/sh', ['-c', cmd], {
 		'uid': userid.uid(user),
 		'gid': userid.gid(group),
 		'cwd': cwd,
@@ -25,11 +43,11 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	});
 
 	/* pipe stdin into this process */
-	process.stdin.pipe(runner);
+	process.stdin.pipe(stdin(runner));
 
 	/* on exit... */
 	runner.on('exit', function (exitcode) {
-		process.stdin.unpipe(runner);
+		process.stdin.unpipe(stdin(runner));
 		process.stdin.resume();
 		process.stdin.pause();
 
@@ -46,7 +64,12 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	});
 
 	/* output std & stderr */
-	runner.on('data', onOutput);
+	stdout(runner).on('data', onLog);
+	stderr(runner).on('data', onLog);
+
+	/* error handler for std & stderr */
+	stdout(runner).on('error', function () {});
+	stderr(runner).on('error', function () {});
 
 	return runner;
 }
@@ -59,6 +82,7 @@ var runSingle = function(jobname, user, jobs, loop,
 	let cmd = targetProps['exe'] || '';
 	let cwd = targetProps['cwd'] || '.';
 	let exer = targetProps['exer'] || user;
+	let spawn = targetProps['spawn'] || 'pty';
 
 	/* define onExit function */
 	let onExit = function (exitcode, onBreak) {
@@ -95,7 +119,8 @@ var runSingle = function(jobname, user, jobs, loop,
 		'env': env,
 		'cwd': cwd,
 		'user': exer,
-		'group': exer
+		'group': exer,
+		'spawn': spawn
 	};
 
 	// actually run command(s)
