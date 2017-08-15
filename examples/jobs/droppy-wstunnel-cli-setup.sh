@@ -7,7 +7,8 @@ $curdir/gitrepo-mirror.sh \
 cd ~/wsproxy
 echo "start new instances ..."
 
-for i in `seq 1 2`; do
+for i in `seq 1 4`; do
+	echo "instance $i ..."
 	node ./wsproxy-cli.js >wsproxy-cli-${i}.log <&- 2>&1 &
 	pid=$!
 	echo $pid > wsproxy-cli-${i}.pid
