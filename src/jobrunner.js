@@ -32,6 +32,7 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	}
 
 	/* spawn runner process */
+	onLog(user + "'s cmd: " + cmd);
 	var runner = spawnFun('/bin/sh', ['-c', cmd], {
 		'uid': userid.uid(user),
 		'gid': userid.gid(group),
@@ -52,7 +53,7 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 		process.stdin.pause();
 
 		/* callback */
-		if (onExit(exitcode, onBreak)) {
+		if (onExit(exitcode, onBreak /* may be undef */)) {
 			return;
 		}
 
@@ -125,7 +126,6 @@ var runSingle = function(jobname, user, jobs, loop,
 
 	// actually run command(s)
 	let runMainCmd = function () {
-		logfun('cmd: ' + cmd);
 		let runner = exports.spawn(cmd, opts, logfun, onExit,
 		                   loop.next, loop.again, loop.brk);
 		logfun('PID = #' + runner.pid);
@@ -158,13 +158,13 @@ function scheduleJob(jobname, jobs, onLog, invokeFun)
 	if (cronJob) cronJob.stop();
 
 	if (cronTab == '') {
-		invokeFun(targetProps); /* invoke now */
+		invokeFun(); /* invoke now */
 
 	} else {
 		try {
 			cronJob = new CronJob(cronTab, function () {
 				onLog(jobname, " --- Timer out --- ");
-				invokeFun(targetProps); /* invoke later */
+				invokeFun(); /* invoke later */
 			});
 		} catch(ex) {
 			onLog(jobname, "Bad cron pattern: " + cronTab);
@@ -181,9 +181,39 @@ exports.run = function(runList, user, jobs, onSpawn,
 	/* sync running */
 	syncLoop(runList, function (arr, idx, loop) {
 		let jobname = arr[idx];
+		let props = jobs.depGraph.getNodeData(jobname);
+		let ref = props['ref'];
+
+		if (ref) {
+			onLog(jobname, "refers to: " + ref);
+			/* check target existance */
+			try {
+				let _ = jobs.depGraph.getNodeData(ref);
+			} catch (e) {
+				onLog(jobname, e.message);
+				loop.brk();
+				return;
+			}
+
+			/* make run list */
+			let subList = [];
+			let deps = jobs.depGraph.dependenciesOf(ref);
+			deps.forEach(function (dep) {
+				subList.push(dep);
+			});
+			subList.push(ref);
+			exports.run(subList, user, jobs, onSpawn, onExit,
+			/* on Final */ function (j, completed) {
+				if (completed)
+					loop.next();
+				else
+					loop.brk();
+			}, onLog);
+			return;
+		}
 
 		/* schedule a time to run (can be immediately) */
-		scheduleJob(jobname, jobs, onLog, function (props) {
+		scheduleJob(jobname, jobs, onLog, function () {
 
 			onSpawn(jobname, props); /* callback */
 
@@ -192,9 +222,9 @@ exports.run = function(runList, user, jobs, onSpawn,
 				onLog(jobname, l);
 			}, onExit /* callback */);
 		});
-	}, function (arr, idx) {
+	}, function (arr, idx, loop, completed) {
 		let jobname = arr[idx];
 
-		onFinal(jobname); /* callback */
+		onFinal(jobname, completed); /* callback */
 	});
 }

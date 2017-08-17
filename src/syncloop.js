@@ -6,7 +6,7 @@ exports.syncLoop = function (arr, deed, done) {
 				deed(arr, idx + 1, loop);
 				idx = idx + 1;
 			} else {
-				done(arr, arr.length - 1, loop);
+				done(arr, arr.length - 1, loop, true);
 			}
 		},
 		again: function () {
@@ -14,7 +14,7 @@ exports.syncLoop = function (arr, deed, done) {
 		},
 		brk: function () {
 			idx = arr.length - 1;
-			done(arr, idx, loop);
+			done(arr, idx, loop, false);
 		}
 	};
 

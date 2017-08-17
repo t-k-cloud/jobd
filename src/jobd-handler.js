@@ -140,7 +140,6 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	let reqJson = req.body;
 	let type = reqJson['type'] || '';
 	let target = reqJson['target'] || '';
-	let targetProps = {};
 	let runList = [];
 	let logdir = getLogdir(jobsdir);
 
@@ -150,9 +149,9 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	/* print coming query */
 	masterLog(logdir, 'Query: ' + JSON.stringify(reqJson));
 
-	/* get target properties */
+	/* check target existance */
 	try {
-		targetProps = jobs.depGraph.getNodeData(target);
+		let _ = jobs.depGraph.getNodeData(target);
 	} catch (e) {
 		masterLog(logdir, e.message);
 		res.json({"res": e.message});
@@ -180,12 +179,16 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	/* fail counter, will break the loop if fail too many times */
 	let failCnt = 0;
 
-	jobRunner.run(runList, user, jobs, function (jobname, props) {
+	jobRunner.run(runList, user, jobs,
+	/* on Spawn: */
+	function (jobname, props) {
 		masterLog(logdir, 'Start to run: [' + jobname + ']');
 		hist.add(jobname); /* add into history list */
 		props['invoke_time'] = Date.now();
 
-	}, function (jobname, props, exitcode, onBreak) {
+	},
+	/* on Exit: */
+	function (jobname, props, exitcode, onBreak) {
 		slaveLog(jobname, logdir, 'exitcode: ' + exitcode);
 		props['last_retcode'] = exitcode;
 		props['finish_time'] = Date.now();
@@ -204,11 +207,15 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 		}
 
 		return 0;
+	},
+	/* on Final: */
+	function (jobname, completed) {
+		masterLog(logdir, '=== Target: ' + jobname + ' (' +
+			(completed ? 'successful' : 'failed') + ') ===');
 
-	}, function (jobname) {
-		masterLog(logdir, 'Final job done: [' + jobname + ']');
-
-	}, function (jobname, line) {
+	},
+	/* on Log: */
+	function (jobname, line) {
 		slaveLog(jobname, logdir, line);
 	});
 };
