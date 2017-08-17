@@ -83,7 +83,7 @@ var runSingle = function(jobname, user, jobs, loop,
 	let cmd = targetProps['exe'] || '';
 	let cwd = targetProps['cwd'] || '.';
 	let exer = targetProps['exer'] || user;
-	let spawn = targetProps['spawn'] || 'pty';
+	let spawn = targetProps['spawn'] || 'direct';
 
 	/* define onExit function */
 	let onExit = function (exitcode, onBreak) {
