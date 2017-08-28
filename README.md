@@ -1,7 +1,7 @@
 Setup
 ======
 ```sh
-$ sudo ./setup.sh
+$ ./setup.sh
 ```
 
 Test it
