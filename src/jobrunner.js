@@ -50,12 +50,15 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	/* pipe stdin into this process */
 	process.stdin.pipe(stdin(runner));
 
-	/* on exit... */
-	runner.on('exit', function (exitcode) {
+	/* on close... */
+	runner.on('close', function () {
 		process.stdin.unpipe(stdin(runner));
 		process.stdin.resume();
 		process.stdin.pause();
+	});
 
+	/* on exit... */
+	runner.on('exit', function (exitcode) {
 		/* callback */
 		if (onExit(exitcode, onBreak /* may be undef */)) {
 			return;
