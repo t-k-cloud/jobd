@@ -78,6 +78,7 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	/* error handler for std & stderr */
 	stdout(runner).on('error', function () {});
 	stderr(runner).on('error', function () {});
+	stdin(runner).on('error', function () {});
 
 	return runner;
 }
