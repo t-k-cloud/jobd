@@ -12,7 +12,11 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	let cwd = opt.cwd || '.';
 	let user = opt.user || process.env['USER'];
 	let group = opt.group || process.env['USER'];
-	cwd = cwd.replace('~', '/home/' + user);
+
+	if (user == 'root')
+		cwd = cwd.replace('~', '/root');
+	else
+		cwd = cwd.replace('~', '/home/' + user);
 
 	let spawnFun = pty.spawn;
 	let stdout = function (o) {return o};
@@ -32,7 +36,7 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	}
 
 	/* spawn runner process */
-	onLog(user + "'s cmd: " + cmd);
+	onLog(user + "'s cmd: " + cmd + ' @ ' + cwd);
 	var runner = spawnFun('/bin/sh', ['-c', cmd], {
 		'uid': userid.uid(user),
 		'gid': userid.gid(group),
