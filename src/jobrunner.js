@@ -18,6 +18,7 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	else
 		cwd = cwd.replace('~', '/home/' + user);
 
+	/* set spawn function and its getter */
 	let spawnFun = pty.spawn;
 	let stdout = function (o) {return o};
 	let stderr = function (o) {return {'on': function (d) {}}};
@@ -50,15 +51,12 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	/* pipe stdin into this process */
 	process.stdin.pipe(stdin(runner));
 
-	/* on close... */
-	runner.on('close', function () {
+	/* on exit... */
+	runner.on('exit', function (exitcode) {
 		process.stdin.unpipe(stdin(runner));
 		process.stdin.resume();
 		process.stdin.pause();
-	});
 
-	/* on exit... */
-	runner.on('exit', function (exitcode) {
 		/* callback */
 		if (onExit(exitcode, onBreak /* may be undef */)) {
 			return;
