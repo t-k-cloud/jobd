@@ -48,6 +48,11 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 		'name': 'xterm-color'
 	});
 
+	if (stdin(runner) == undefined) {
+		onLog("spawn function failed !!!");
+		return {};
+	}
+
 	/* pipe stdin into this process */
 	process.stdin.pipe(stdin(runner));
 
