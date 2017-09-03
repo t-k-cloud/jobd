@@ -5,7 +5,7 @@ var userid = require('userid');
 var pty = require('pty.js');
 var childProcess = require('child_process');
 
-exports.spawn = function(cmd, opt, onOutput, onExit,
+exports.spawn = function(cmd, opt, logLines, onExit,
                      onSucc, onFail, onBreak) {
 	/* parameter process */
 	let env = opt.env || {};
@@ -23,21 +23,20 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	let stdout = function (o) {return o};
 	let stderr = function (o) {return {'on': function (d) {}}};
 	let stdin  = function (o) {return o};
-	let onLog  = function (o) {onOutput(o)};
+	let loglines  = function (o) {logLines(o)};
 
 	if (opt.spawn == 'direct') {
 		spawnFun = childProcess.spawn;
 		stdout = function (o) {return o.stdout};
 		stderr = function (o) {return o.stderr};
 		stdin  = function (o) {return o.stdin};
-		onLog  = function (o) {onOutput(o.toString())};
+		loglines  = function (o) {logLines(o.toString())};
 	} else if (opt.spawn != 'pty') {
-		onLog("spawn method unrecognized,");
-		onLog("fallback to 'pty'.");
+		loglines("spawn method unrecognized,");
+		loglines("fallback to 'pty'.");
 	}
 
 	/* spawn runner process */
-	onLog(user + "'s cmd: " + cmd + ' @ ' + cwd);
 	var runner = spawnFun('/bin/sh', ['-c', cmd], {
 		'uid': userid.uid(user),
 		'gid': userid.gid(group),
@@ -49,7 +48,7 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	});
 
 	if (stdin(runner) == undefined) {
-		onLog("spawn function failed !!!");
+		loglines("spawn function failed !!!");
 		return {};
 	}
 
@@ -75,8 +74,8 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 	});
 
 	/* output std & stderr */
-	stdout(runner).on('data', onLog);
-	stderr(runner).on('data', onLog);
+	stdout(runner).on('data', loglines);
+	stderr(runner).on('data', loglines);
 
 	/* error handler for std & stderr */
 	stdout(runner).on('error', function () {});
@@ -87,7 +86,7 @@ exports.spawn = function(cmd, opt, onOutput, onExit,
 }
 
 var runSingle = function(jobname, user, jobs, loop,
-                         onlog, onJobExit) {
+                         onLog, onJobExit) {
 	// parse
 	let cfgEnv = jobs.env;
 	let targetProps = jobs.depGraph.getNodeData(jobname);
@@ -103,15 +102,15 @@ var runSingle = function(jobname, user, jobs, loop,
 	};
 
 	/* split on line feeds and pass into logger */
-	let logfun = function (lines) {
+	let logLines = function (lines) {
 		lines.split('\n').forEach(function (line) {
-			onlog(line);
+			onLog(jobname, line);
 		});
 	};
 
 	// joint node does not have a `cmd', skip it
 	if (cmd == '') {
-		logfun('No command to run here, skip.');
+		onLog('all', 'No command to run here, skip.');
 		setTimeout(loop.next, 500);
 		return;
 	}
@@ -137,23 +136,24 @@ var runSingle = function(jobname, user, jobs, loop,
 
 	// actually run command(s)
 	let runMainCmd = function () {
-		let runner = exports.spawn(cmd, opts, logfun, onExit,
+		onLog('all', user + "'s cmd: " + cmd + ' @ ' + cwd);
+		let runner = exports.spawn(cmd, opts, logLines, onExit,
 		                   loop.next, loop.again, loop.brk);
-		logfun('PID = #' + runner.pid);
+		onLog('all', 'PID = #' + runner.pid);
 	};
 
 	if (targetProps['if']) {
 		let ifcmd = targetProps['if'];
-		logfun('if cmd: ' + ifcmd);
-		let runner = exports.spawn(ifcmd, opts, logfun, onExit,
+		onLog('all', 'if cmd: ' + ifcmd);
+		let runner = exports.spawn(ifcmd, opts, logLines, onExit,
 		                   runMainCmd, loop.next);
-		logfun('PID = #' + runner.pid);
+		onLog('all', 'PID = #' + runner.pid);
 	} else if (targetProps['if_not']) {
 		let incmd = targetProps['if_not'];
-		logfun('if-not cmd: ' + incmd);
-		let runner = exports.spawn(incmd, opts, logfun, onExit,
+		onLog('all', 'if-not cmd: ' + incmd);
+		let runner = exports.spawn(incmd, opts, logLines, onExit,
 		                   loop.next, runMainCmd);
-		logfun('PID = #' + runner.pid);
+		onLog('all', 'PID = #' + runner.pid);
 	} else {
 		runMainCmd();
 	}
@@ -174,11 +174,11 @@ function scheduleJob(jobname, jobs, onLog, invokeFun)
 	} else {
 		try {
 			cronJob = new CronJob(cronTab, function () {
-				onLog(jobname, " --- Timer out --- ");
+				onLog('all', "Timer out: " + jobname);
 				invokeFun(); /* invoke later */
 			});
 		} catch(ex) {
-			onLog(jobname, "Bad cron pattern: " + cronTab);
+			onLog('all', "Bad cron pattern: " + cronTab);
 			return;
 		}
 
@@ -195,6 +195,7 @@ exports.run = function(runList, user, jobs, onSpawn,
 		let props = jobs.depGraph.getNodeData(jobname);
 		let ref = props['ref'];
 
+		/* if this job is merely a reference */
 		if (ref) {
 			onLog(jobname, "refers to: " + ref);
 			/* check target existance */
@@ -229,9 +230,7 @@ exports.run = function(runList, user, jobs, onSpawn,
 			onSpawn(jobname, props); /* callback */
 
 			/* actually run */
-			runSingle(jobname, user, jobs, loop, function (l) {
-				onLog(jobname, l);
-			}, onExit /* callback */);
+			runSingle(jobname, user, jobs, loop, onLog, onExit);
 		});
 	}, function (arr, idx, loop, completed) {
 		let jobname = arr[idx];

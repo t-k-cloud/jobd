@@ -216,6 +216,9 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	},
 	/* on Log: */
 	function (jobname, line) {
-		slaveLog(jobname, logdir, line);
+		if (jobname == 'all')
+			masterLog(logdir, line);
+		else
+			slaveLog(jobname, logdir, line);
 	});
 };
