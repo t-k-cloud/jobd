@@ -33,12 +33,12 @@ function loggerWrite(path, name, data, fvol) {
 
 	if (logger['prev'] == undefined) {
 		loggerEach(path, name, function (f) {
-			fs.openSync(f, 'w');
+			fs.closeSync(fs.openSync(f, 'w'));
 			fs.truncateSync(f);
 		});
 	} else if (now != logger['prev']) {
 		loggerEach(path, name, function (f) {
-			fs.openSync(f, 'w');
+			fs.closeSync(fs.openSync(f, 'w'));
 			fs.truncateSync(f);
 		}, now);
 	}
