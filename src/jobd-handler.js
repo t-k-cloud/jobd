@@ -189,7 +189,7 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	},
 	/* on Exit: */
 	function (jobname, props, exitcode, onBreak) {
-		slaveLog(jobname, logdir, 'exitcode: ' + exitcode);
+		masterLog(logdir, 'exitcode: ' + exitcode);
 		props['last_retcode'] = exitcode;
 		props['finish_time'] = Date.now();
 
@@ -210,9 +210,8 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	},
 	/* on Final: */
 	function (jobname, completed) {
-		masterLog(logdir, '=== Target: ' + jobname + ' (' +
-			(completed ? 'successful' : 'failed') + ') ===');
-
+		masterLog(logdir, 'Finished: [' + jobname + ' (' +
+			(completed ? 'successful' : 'failed') + ')]\n');
 	},
 	/* on Log: */
 	function (jobname, line) {

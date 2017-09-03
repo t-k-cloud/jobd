@@ -174,7 +174,7 @@ function scheduleJob(jobname, jobs, onLog, invokeFun)
 	} else {
 		try {
 			cronJob = new CronJob(cronTab, function () {
-				onLog('all', "Timer out: " + jobname);
+				onLog('all', 'Timer expires: [' + jobname + ']');
 				invokeFun(); /* invoke later */
 			});
 		} catch(ex) {
