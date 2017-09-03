@@ -27,9 +27,9 @@ function slaveLog(jobname, logdir, line) {
 
 exports.handle_log = function (jobsdir, jobname, res) {
 	let logdir = getLogdir(jobsdir);
+	res.set('Content-Type', 'text/plain');
 	logger.read(jobname, logdir, function (lines) {
-		res.set('Content-Type', 'text/plain');
-		res.send(lines);
+		res.write(lines);
 	}, function () {
 		res.end();
 	});
