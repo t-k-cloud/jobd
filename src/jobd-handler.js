@@ -73,10 +73,12 @@ exports.handle_deps = function (req, res, depGraph) {
 	nodes.forEach(function (n) {
 		let props = depGraph.getNodeData(n);
 		let deps = props.dep || [];
-		retobj[n] = deps;
+		retobj[n] = {};
+		retobj[n]["dep"] = deps;
+		retobj[n]["ref"] = props.ref;
 	});
 
-	res.json({'res': 'successful', 'deps': retobj});
+	res.json({'res': 'successful', 'graph': retobj});
 };
 
 exports.handle_stdin = function (req, res) {

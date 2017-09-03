@@ -15,8 +15,7 @@ if (3 != args.length) {
 }
 
 var user = args[2];
-var workdir = '/home/' + user;
-var jobsdir = workdir + '/jobs';
+var jobsdir = '../examples/jobs';
 
 /* root/jobsdir tester */
 try {
@@ -92,5 +91,5 @@ app.get('/', function (req, res) {
 	routeHandler.handle_query(req, res, user, jobsdir, jobs);
 });
 
-console.log('listening...');
+console.log('listening on ' + 3001);
 app.listen(3001);
