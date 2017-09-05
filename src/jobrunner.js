@@ -136,24 +136,24 @@ var runSingle = function(jobname, user, jobs, loop,
 
 	// actually run command(s)
 	let runMainCmd = function () {
-		onLog('all', user + "'s cmd: " + cmd + ' @ ' + cwd);
+		logLines(user + "'s cmd: " + cmd + ' @ ' + cwd);
 		let runner = exports.spawn(cmd, opts, logLines, onExit,
 		                   loop.next, loop.again, loop.brk);
-		onLog('all', 'PID = #' + runner.pid);
+		logLines('PID = #' + runner.pid);
 	};
 
 	if (targetProps['if']) {
 		let ifcmd = targetProps['if'];
-		onLog('all', 'if cmd: ' + ifcmd);
+		logLines('if cmd: ' + ifcmd);
 		let runner = exports.spawn(ifcmd, opts, logLines, onExit,
 		                   runMainCmd, loop.next);
-		onLog('all', 'PID = #' + runner.pid);
+		logLines('PID = #' + runner.pid);
 	} else if (targetProps['if_not']) {
 		let incmd = targetProps['if_not'];
-		onLog('all', 'if-not cmd: ' + incmd);
+		logLines('if-not cmd: ' + incmd);
 		let runner = exports.spawn(incmd, opts, logLines, onExit,
 		                   loop.next, runMainCmd);
-		onLog('all', 'PID = #' + runner.pid);
+		logLines('PID = #' + runner.pid);
 	} else {
 		runMainCmd();
 	}
