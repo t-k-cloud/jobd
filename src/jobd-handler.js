@@ -213,8 +213,8 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	},
 	/* on Final: */
 	function (jobname, completed) {
-		masterLog(logdir, 'Finished: [' + jobname + ' (' +
-			(completed ? 'successful' : 'failed') + ')]\n');
+		slaveLog(jobname, logdir, 'Finished: [' + jobname +
+		    ' (' + (completed ? 'successful' : 'failed') + ')]\n');
 	},
 	/* on Log: */
 	function (jobname, line) {
