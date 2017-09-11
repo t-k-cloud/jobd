@@ -1,8 +1,12 @@
-const historyMaxItems = 25;
+const historyMaxItems = 10;
 
 var history = [];
 
 exports.add = function(jobname) {
+	if (history.includes(jobname)) {
+		return;
+	}
+
 	if (history.length == historyMaxItems)
 		history.shift();
 
