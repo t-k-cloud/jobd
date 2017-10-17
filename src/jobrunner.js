@@ -225,7 +225,7 @@ exports.run = function(runList, user, jobs, onSpawn,
 		}
 
 		if (jobs.dryrun) {
-			onLog(jobname, 'dry run');
+			onLog(jobname, 'dry run ==> ' + jobname);
 			onExit(jobname, props, 0);
 			setTimeout(loop.next, 500);
 			return;
