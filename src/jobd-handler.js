@@ -163,6 +163,7 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 
 	/* construct runList from query */
 	switch (type) {
+	case "dryrun":
 	case "goal":
 		let deps = jobs.depGraph.dependenciesOf(target);
 		deps.forEach(function (dep) {
@@ -178,6 +179,11 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 
 	/* return client runList */
 	res.json({"res": 'successful', "runList": runList});
+
+	/* set dry-run flag if specified */
+	jobs.dryrun = false;
+	if (type == 'dryrun')
+		jobs.dryrun = true;
 
 	/* fail counter, will break the loop if fail too many times */
 	let failCnt = 0;

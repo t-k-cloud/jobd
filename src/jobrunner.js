@@ -224,6 +224,13 @@ exports.run = function(runList, user, jobs, onSpawn,
 			return;
 		}
 
+		if (jobs.dryrun) {
+			onLog(jobname, 'dry run');
+			onExit(jobname, props, 0);
+			setTimeout(loop.next, 500);
+			return;
+		}
+
 		/* schedule a time to run (can be immediately) */
 		scheduleJob(jobname, jobs, onLog, function () {
 
