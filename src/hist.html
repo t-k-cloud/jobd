@@ -23,13 +23,13 @@ $(document).ready(function () {
 			var elapsed = (timestamp1 - timestamp0) / 1000;
 			var status_ = '[unknown]';
 			if (last_retcode == 0) {
-				status_ = '&#9745;';
+				status_ = '[good]';
 			} else if (last_retcode > 0) {
-				status_ = '&#9746;';
+				status_ = '[error]';
 			}
 
 			if (timerSwitch != undefined) {
-				status_ += '&#8986;';
+				status_ += '(timer)';
 				var anchor = function (ref) {
 					return '<a target="_blank" href="' + ref + '">';
 				};

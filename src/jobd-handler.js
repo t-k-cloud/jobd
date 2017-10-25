@@ -55,10 +55,12 @@ exports.handle_show = function (jobs, jobname, res) {
 
 	if (job['cronJob']) {
 		let switchOn = job['cronJob'].running;
+		let cronTime = job['cronJob'].cronTime;
 		res.json({
 			"res": 'successful',
 			'job': omit(job, 'cronJob'),
-			'cronRunning': switchOn
+			'cronRunning': switchOn,
+			'cronTime': cronTime
 		});
 	} else {
 		res.json({
@@ -119,6 +121,15 @@ exports.handle_timerswitch = function (jobname, switchVal,
 	res.json({'res': 'successful'});
 };
 
+function stop_all_timer_jobs(jobs) {
+	let nodes = jobs.depGraph.overallOrder();
+	nodes.forEach(function (n) {
+		let props = jobs.depGraph.getNodeData(n);
+		cronJob = props['cronJob'];
+		cronJob && cronJob.stop();
+	});
+}
+
 exports.handle_reload = function (res, jobsldr, jobsdir, jobs) {
 	var newjobs = {};
 	try {
@@ -130,8 +141,10 @@ exports.handle_reload = function (res, jobsldr, jobsdir, jobs) {
 		return jobs;
 	}
 
-	res.json({'res': 'successful'});
+	stop_all_timer_jobs(jobs);
 	hist.clear(); /* clear history */
+
+	res.json({'res': 'successful'});
 	return newjobs;
 };
 
