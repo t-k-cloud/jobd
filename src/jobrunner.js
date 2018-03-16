@@ -4,6 +4,7 @@ var extend = require('util')._extend;
 var userid = require('userid');
 var pty = require('pty.js');
 var childProcess = require('child_process');
+var tasks = require('./tasks.js');
 
 exports.spawn = function(cmd, opt, logLines, onExit,
                      onSucc, onFail, onBreak) {
@@ -85,10 +86,11 @@ exports.spawn = function(cmd, opt, logLines, onExit,
 	return runner;
 }
 
-var runSingle = function(jobname, user, jobs, loop,
+var runSingle = function(task_job, user, jobs, loop,
                          onLog, onJobExit) {
 	// parse
 	let cfgEnv = jobs.env;
+	let jobname = task_job.name;
 	let targetProps = jobs.depGraph.getNodeData(jobname);
 	let cmd = targetProps['exe'] || '';
 	let cwd = targetProps['cwd'] || '.';
@@ -100,6 +102,11 @@ var runSingle = function(jobname, user, jobs, loop,
 		return onJobExit(jobname, targetProps,
 		                 exitcode, onBreak);
 	};
+	let onMainExit = function (exitcode, onBreak) {
+		task_job['finish_time'] = Date.now();
+		task_job['last_exitcode'] = exitcode;
+		return onExit(exitcode, onBreak);
+	}
 
 	/* split on line feeds and pass into logger */
 	let logLines = function (lines) {
@@ -137,8 +144,10 @@ var runSingle = function(jobname, user, jobs, loop,
 	// actually run command(s)
 	let runMainCmd = function () {
 		logLines(user + "'s cmd: " + cmd + ' @ ' + cwd);
-		let runner = exports.spawn(cmd, opts, logLines, onExit,
+		task_job['invoke_time'] = Date.now();
+		let runner = exports.spawn(cmd, opts, logLines, onMainExit,
 		                   loop.next, loop.again, loop.brk);
+		task_job['last_pid'] = runner.pid;
 		logLines('PID = #' + runner.pid);
 	};
 
@@ -159,11 +168,13 @@ var runSingle = function(jobname, user, jobs, loop,
 	}
 };
 
-function scheduleJob(jobname, jobs, onLog, invokeFun)
+function scheduleJob(task_job, jobs, onLog, invokeFun)
 {
+	let jobname = task_job.name;
 	let targetProps = jobs.depGraph.getNodeData(jobname);
-	let cronJob = targetProps['cronJob'];
 	let cronTab = targetProps['timer'] || '';
+	let cronJob = task_job['cronJob'];
+	task_job['cronJob'] = cronTab;
 
 	/* stop previous running cronJob */
 	if (cronJob) cronJob.stop();
@@ -182,18 +193,34 @@ function scheduleJob(jobname, jobs, onLog, invokeFun)
 			return;
 		}
 
-		targetProps['cronJob'] = cronJob;
+		task_job['cronJob'] = cronJob;
 		cronJob.start();
 	}
 }
 
-exports.run = function(runList, user, jobs, onSpawn,
+exports.run = function(parentTaskID, runList, user, jobs, onSpawn,
                        onExit, onFinal, onLog) {
+	/* create task history */
+	let task = tasks.create(runList);
+	task["parent_task"] = parentTaskID;
+
 	/* sync running */
 	syncLoop(runList, function (arr, idx, loop) {
 		let jobname = arr[idx];
 		let props = jobs.depGraph.getNodeData(jobname);
 		let ref = props['ref'];
+
+		/* update task job */
+		task["cur_job_idx"] = idx;
+		let task_job = task["joblist"][idx];
+		task_job['touch_cnt'] += 1;
+
+		/* sanity check */
+		if (task_job.name != jobname) {
+			onLog(jobname, "task_job.name != jobname, unexpected.");
+			loop.brk();
+			return;
+		}
 
 		/* if this job is merely a reference */
 		if (ref) {
@@ -214,7 +241,8 @@ exports.run = function(runList, user, jobs, onSpawn,
 				subList.push(dep);
 			});
 			subList.push(ref);
-			exports.run(subList, user, jobs, onSpawn, onExit,
+
+			exports.run(task.id, subList, user, jobs, onSpawn, onExit,
 			/* on Final */ function (j, completed) {
 				if (completed)
 					loop.next();
@@ -232,16 +260,30 @@ exports.run = function(runList, user, jobs, onSpawn,
 		}
 
 		/* schedule a time to run (can be immediately) */
-		scheduleJob(jobname, jobs, onLog, function () {
+		scheduleJob(task_job, jobs, onLog, function () {
 
 			onSpawn(jobname, props); /* callback */
 
 			/* actually run */
-			runSingle(jobname, user, jobs, loop, onLog, onExit);
+			runSingle(task_job, user, jobs, loop, onLog, onExit);
 		});
 	}, function (arr, idx, loop, completed) {
 		let jobname = arr[idx];
 
+		/* update task job index */
+		task["cur_job_idx"] = idx;
+
 		onFinal(jobname, completed); /* callback */
 	});
 }
+
+exports.get_all_tasks = function() {
+	return tasks.getAll();
+};
+
+exports.clear_task = function(taskID) {
+	if (taskID == 0)
+		tasks.clear(); /* clear all */
+	else
+		tasks.kill(taskID);
+};

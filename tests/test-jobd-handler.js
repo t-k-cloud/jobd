@@ -67,8 +67,8 @@ app.get('/', function (req, res) {
 }).get('/query', function (req, res) {
 	res.sendFile(path.resolve('../src/query.html'));
 
-}).get('/hist', function (req, res) {
-	res.sendFile(path.resolve('../src/hist.html'));
+}).get('/tasks', function (req, res) {
+	res.sendFile(path.resolve('../src/tasks.html'));
 
 }).post('/stdin', function (req, res) {
 	routeHandler.handle_stdin(req, res);
@@ -79,13 +79,12 @@ app.get('/', function (req, res) {
 }).get('/show/:jobname', function (req, res) {
 	routeHandler.handle_show(jobs, req.params.jobname, res);
 
-}).get('/timerswitch/:jobname/:switch', function (req, res) {
-	let j = req.params.jobname || '';
-	let s = req.params['switch'] || 'off';
-	routeHandler.handle_timerswitch(j, s, jobs, res);
+}).get('/kill_task/:taskid', function (req, res) {
+	let taskID = req.params.taskid;
+	routeHandler.handle_kill_task(taskID, res);
 
-}).get('/history', function (req, res) {
-	routeHandler.handle_hist(res);
+}).get('/list_tasks', function (req, res) {
+	routeHandler.handle_list_tasks(res);
 
 }).post('/run', function (req, res) {
 	routeHandler.handle_query(req, res, user, jobsdir, jobs);

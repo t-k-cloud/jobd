@@ -1,6 +1,5 @@
 var jobRunner = require('./jobrunner.js');
 var logger = require('./joblogger.js');
-var hist = require('./history.js');
 var fs = require('fs');
 
 const fv_all = 20;
@@ -35,15 +34,6 @@ exports.handle_log = function (jobsdir, jobname, res) {
 	});
 };
 
-function omit(obj, omitKey) {
-	return Object.keys(obj).reduce((result, key) => {
-		if(key !== omitKey) {
-			result[key] = obj[key];
-		}
-		return result;
-	}, {});
-}
-
 exports.handle_show = function (jobs, jobname, res) {
 	let job = {};
 	try {
@@ -53,21 +43,10 @@ exports.handle_show = function (jobs, jobname, res) {
 		return;
 	}
 
-	if (job['cronJob']) {
-		let switchOn = job['cronJob'].running;
-		let cronTime = job['cronJob'].cronTime;
-		res.json({
-			"res": 'successful',
-			'job': omit(job, 'cronJob'),
-			'cronRunning': switchOn,
-			'cronTime': cronTime
-		});
-	} else {
-		res.json({
-			"res": 'successful',
-			'job': omit(job, 'cronJob')
-		});
-	}
+	res.json({
+		"res": 'successful',
+		'job': job
+	});
 };
 
 exports.handle_deps = function (req, res, depGraph) {
@@ -96,39 +75,10 @@ exports.handle_stdin = function (req, res) {
 	}
 };
 
-exports.handle_timerswitch = function (jobname, switchVal,
-                                       jobs, res) {
-	let targetProps = {};
-	let cronJob = null;
-
-	try {
-		targetProps = jobs.depGraph.getNodeData(jobname);
-		cronJob = targetProps['cronJob'];
-	} catch (e) {
-		res.json({"res": e.message});
-		return;
-	}
-
-	if (switchVal == 'on') {
-		cronJob && cronJob.start();
-	} else if (switchVal == 'off') {
-		cronJob && cronJob.stop();
-	} else {
-		res.json({"res": 'Switch value can only be on/off.'});
-		return;
-	}
-
+exports.handle_kill_task = function (taskID, res) {
+	jobRunner.clear_task(taskID);
 	res.json({'res': 'successful'});
 };
-
-function stop_all_timer_jobs(jobs) {
-	let nodes = jobs.depGraph.overallOrder();
-	nodes.forEach(function (n) {
-		let props = jobs.depGraph.getNodeData(n);
-		cronJob = props['cronJob'];
-		cronJob && cronJob.stop();
-	});
-}
 
 exports.handle_reload = function (res, jobsldr, jobsdir, jobs) {
 	var newjobs = {};
@@ -141,15 +91,14 @@ exports.handle_reload = function (res, jobsldr, jobsdir, jobs) {
 		return jobs;
 	}
 
-	stop_all_timer_jobs(jobs);
-	hist.clear(); /* clear history */
+	jobRunner.clear_task(0); /* stop all timers and clear tasks history */
 
 	res.json({'res': 'successful'});
 	return newjobs;
 };
 
-exports.handle_hist = function (res) {
-	res.json({'history': hist.get()});
+exports.handle_list_tasks = function (res) {
+	res.json({'tasks': jobRunner.get_all_tasks()});
 };
 
 exports.handle_query = function (req, res, user, jobsdir, jobs) {
@@ -201,19 +150,14 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	/* fail counter, will break the loop if fail too many times */
 	let failCnt = 0;
 
-	jobRunner.run(runList, user, jobs,
+	jobRunner.run(0, runList, user, jobs,
 	/* on Spawn: */
 	function (jobname, props) {
 		masterLog(logdir, 'Start to run: [' + jobname + ']');
-		hist.add(jobname); /* add into history list */
-		props['invoke_time'] = Date.now();
-
 	},
 	/* on Exit: */
 	function (jobname, props, exitcode, onBreak) {
 		masterLog(logdir, 'exitcode: ' + exitcode);
-		props['last_retcode'] = exitcode;
-		props['finish_time'] = Date.now();
 
 		if (onBreak != undefined) {
 			if (exitcode == 0) {
