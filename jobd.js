@@ -3,19 +3,20 @@ var bodyParser = require('body-parser');
 var execSync = require('child_process').execSync;
 var path = require('path');
 
-var jobsldr = require('../src/jobsldr.js');
-var routeHandler = require('../src/jobd-handler.js');
+var jobsldr = require('./src/jobsldr.js');
+var routeHandler = require('./src/jobd-handler.js');
+var expAuth = require('../auth/express-auth.js');
 
 /* arguments parsing */
 var args = process.argv;
 
-if (3 != args.length) {
+if (4 != args.length) {
 	console.log('bad args.');
 	process.exit(1);
 }
 
 var user = args[2];
-var jobsdir = '../examples/jobs';
+var jobsdir = args[3];
 
 /* root/jobsdir tester */
 try {
@@ -48,29 +49,28 @@ process.stdin.on('error', function (e) {
 	console.log('main process stdin error: ' + e.message);
 });
 
+/* initialize express app */
 app = express();
 app.use(bodyParser.json());
-app.use(express.static('../src/'));
+app.use(express.static('./public/'));
 
-app.get('/', function (req, res) {
-	res.sendFile(path.resolve('../src/index.html'));
+/* setup authentication module */
+expAuth.init(app, {
+	loginRoute: '/auth/login',
+	verifyUrl: 'http://localhost/auth/token_verify',
+	keyName: 'tk-auth'
+});
 
-}).get('/graph', function (req, res) {
-	res.sendFile(path.resolve('../src/graph.html'));
+app.get('/', expAuth.middleware, function (req, res) {
+	res.sendFile(path.resolve('./public/query.html'));
 
-}).get('/deps', function (req, res) {
+}).get('/deps', expAuth.middleware, function (req, res) {
 	routeHandler.handle_deps(req, res, jobs.depGraph);
 
-}).get('/reload', function (req, res) {
+}).get('/reload', expAuth.middleware, function (req, res) {
 	jobs = routeHandler.handle_reload(res, jobsldr, jobsdir, jobs);
 
-}).get('/query', function (req, res) {
-	res.sendFile(path.resolve('../src/query.html'));
-
-}).get('/tasks', function (req, res) {
-	res.sendFile(path.resolve('../src/tasks.html'));
-
-}).post('/stdin', function (req, res) {
+}).post('/stdin', expAuth.middleware, function (req, res) {
 	routeHandler.handle_stdin(req, res);
 
 }).get('/log/:jobname', function (req, res) {
@@ -79,14 +79,14 @@ app.get('/', function (req, res) {
 }).get('/show/:jobname', function (req, res) {
 	routeHandler.handle_show(jobs, req.params.jobname, res);
 
-}).get('/kill_task/:taskid', function (req, res) {
+}).get('/kill_task/:taskid', expAuth.middleware, function (req, res) {
 	let taskID = req.params.taskid;
 	routeHandler.handle_kill_task(taskID, res);
 
 }).get('/list_tasks', function (req, res) {
 	routeHandler.handle_list_tasks(res);
 
-}).post('/run', function (req, res) {
+}).post('/run', expAuth.middleware, function (req, res) {
 	routeHandler.handle_query(req, res, user, jobsdir, jobs);
 });
 

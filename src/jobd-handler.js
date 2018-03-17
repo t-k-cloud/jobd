@@ -83,8 +83,8 @@ exports.handle_kill_task = function (taskID, res) {
 exports.handle_reload = function (res, jobsldr, jobsdir, jobs) {
 	var newjobs = {};
 	try {
-		console.log('reloading jobs...');
 		newjobs = jobsldr.load(jobsdir);
+		console.log('all jobs reloaded.');
 	} catch (e) {
 		console.log(e.message);
 		res.json({'res': e.message});

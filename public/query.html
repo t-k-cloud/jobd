@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script type="text/javascript" src="vendor/jquery.min.js"></script>
+<script type="text/javascript" src="vendor/jquery/jquery.min.js"></script>
 <script>
 $(document).ready(function () {
+	const errstr = "authd is down, or did't login.";
 	$("#query").click(function() {
 		$.ajax({
 			method: "POST",
@@ -17,6 +18,8 @@ $(document).ready(function () {
 		}).done(function (msg) {
 			$("#retjson").text(JSON.stringify(msg, null, 2));
 			setTimeout(pullLog, 500);
+		}).fail(function() {
+			$("#retjson").html(errstr);
 		});
 	});
 
@@ -32,6 +35,8 @@ $(document).ready(function () {
 		}).done(function (msg) {
 			$("#retjson").text(JSON.stringify(msg, null, 2));
 			setTimeout(pullLog, 500);
+		}).fail(function() {
+			$("#retjson").html(errstr);
 		});
 	});
 
@@ -46,32 +51,45 @@ $(document).ready(function () {
 		});
 	}
 
-	$("#refresh-log").click(function() { pullLog(); });
+	$("#log-area").click(function() { pullLog(); });
 	$("#retjson").text(JSON.stringify({}));
+
+	pullLog();
 });
 </script>
+<style>
+#log-area:hover {
+	cursor:pointer;
+}
+</style>
 </head>
 <body>
+<p>
+	<a href="graph.html">graph</a>,
+	<a href="tasks.html">tasks</a>,
+	<a href="log/all">logofall</a>.
+</p>
 <h3>Query</h3>
 <select id="type">
 <option value="goal">goal</option>
 <option value="unit">unit</option>
+<option value="dryrun">dryrun</option>
 </select>
-<input  id="target" placeholder="target name"
-        style="width:70%"/>
-<button id="query">query</button>
+<input  id="target" placeholder="target name"/>
+<button id="query">run</button>
 
 <h3>Stdin</h3>
-<input  id="stdin-string" placeholder="standard input"
-        style="width:70%"/>
+<input  id="stdin-string" placeholder="standard input"/>
 <button id="stdin-button">input</button>
 
 <h3>Return JSON</h3>
 <span id="retjson" style="color:gray"></span>
 
 <h3>Log</h3>
+<div id="log-area">
 <pre id="log" style="background:black;color:gray;">
 </pre>
-<button id="refresh-log">refresh</button>
+</div>
+
 </body>
 </html>
