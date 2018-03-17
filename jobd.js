@@ -64,7 +64,7 @@ expAuth.init(app, {
 app.get('/', expAuth.middleware, function (req, res) {
 	res.sendFile(path.resolve('./public/query.html'));
 
-}).get('/deps', expAuth.middleware, function (req, res) {
+}).get('/deps', function (req, res) {
 	routeHandler.handle_deps(req, res, jobs.depGraph);
 
 }).get('/reload', expAuth.middleware, function (req, res) {

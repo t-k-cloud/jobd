@@ -40,12 +40,33 @@ $(document).ready(function () {
 				var svg = svgs[0];
 				svg.setAttribute("height", 1600);
 			}, 100);
+
+			/* bind click function */
+			var nodes = $('g[class="node"]');
+			$(nodes).css({'cursor': 'pointer'});
+			$(nodes).on('click', function() {
+				var jobname = $(this).find('foreignObject div').html();
+				$.ajax({
+					method: "GET",
+					url:"show/" + jobname,
+					contentType: "application/json; charset=utf-8",
+					dataType: "json" /* expecting data type */
+				}).done(function (res) {
+					$("#retjson").text(JSON.stringify(res, null, 2));
+				}).fail(function() {
+					$("#retjson").html('ajax call failed.');
+				});
+			});
 		});
 	});
 });
 </script>
 </head>
 <body>
+<span id="retjson"
+style="background-color:#ffcfcf; position:fixed; bottom: 0; font-size:large">
+hello!
+</span>
 <div id="mermaid" class="mermaid"></div>
 </body>
 </html>
