@@ -46,6 +46,11 @@ $(document).ready(function () {
 			$(nodes).css({'cursor': 'pointer'});
 			$(nodes).on('click', function() {
 				var jobname = $(this).find('foreignObject div').html();
+				/* copy jobname to clipboard */
+				$('#jobname').val(jobname);
+				$('#jobname').select();
+				document.execCommand('copy');
+				/* show job info */
 				$.ajax({
 					method: "GET",
 					url:"show/" + jobname,
@@ -63,8 +68,9 @@ $(document).ready(function () {
 </script>
 </head>
 <body>
+Clicked job name (to be copied to clipboard): <input id="jobname"></input>
 <span id="retjson"
-style="background-color:#ffcfcf; position:fixed; bottom: 0; font-size:large">
+style="background-color:#ffcfcf; position:fixed; left: 0; bottom: 0; font-size:large">
 hello!
 </span>
 <div id="mermaid" class="mermaid"></div>
