@@ -14,7 +14,11 @@ function showjob(jobname, invoke_time_str, pid) {
 		$("#retjson").text(jobname + ' pid#' + pid + ' ' + invoke_time_str +
 		                   JSON.stringify(res, null, 2));
 		pullLog(jobname);
-		$("#log-area").click(function() { pullLog(jobname); });
+		$("#log-area").unbind().click(function() {
+			pullLog(jobname);
+			/* stick the view point to the bottom */
+			$("html, body").animate({ scrollTop: $(document).height() });
+		});
 	}).fail(function() {
 		$("#retjson").html('ajax call failed.');
 	});
