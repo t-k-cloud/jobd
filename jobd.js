@@ -10,13 +10,14 @@ var expAuth = require('../auth/express-auth.js');
 /* arguments parsing */
 var args = process.argv;
 
-if (4 != args.length) {
+if (4 > args.length) {
 	console.log('bad args.');
 	process.exit(1);
 }
 
 var user = args[2];
 var jobsdir = args[3];
+var bootstrap = args[4];
 
 /* root/jobsdir tester */
 try {
@@ -61,16 +62,23 @@ expAuth.init(app, {
 	keyName: 'tk-auth'
 });
 
-app.get('/', expAuth.middleware, function (req, res) {
+/* no need for password under bootstrap mode */
+var auth_middleware = expAuth.middleware;
+if (bootstrap == '--bootstrap') {
+	auth_middleware = (req, res, next) => {return next()};
+	console.log('[Bootstrap mode]');
+}
+
+app.get('/', auth_middleware, function (req, res) {
 	res.sendFile(path.resolve('./public/query.html'));
 
 }).get('/deps', function (req, res) {
 	routeHandler.handle_deps(req, res, jobs.depGraph);
 
-}).get('/reload', expAuth.middleware, function (req, res) {
+}).get('/reload', auth_middleware, function (req, res) {
 	jobs = routeHandler.handle_reload(res, jobsldr, jobsdir, jobs);
 
-}).post('/stdin', expAuth.middleware, function (req, res) {
+}).post('/stdin', auth_middleware, function (req, res) {
 	routeHandler.handle_stdin(req, res);
 
 }).get('/log/:jobname', function (req, res) {
@@ -79,14 +87,14 @@ app.get('/', expAuth.middleware, function (req, res) {
 }).get('/show/:jobname', function (req, res) {
 	routeHandler.handle_show(jobs, req.params.jobname, res);
 
-}).get('/kill_task/:taskid', expAuth.middleware, function (req, res) {
+}).get('/kill_task/:taskid', auth_middleware, function (req, res) {
 	let taskID = req.params.taskid;
 	routeHandler.handle_kill_task(taskID, res);
 
 }).get('/list_tasks', function (req, res) {
 	routeHandler.handle_list_tasks(res);
 
-}).post('/run', expAuth.middleware, function (req, res) {
+}).post('/run', auth_middleware, function (req, res) {
 	routeHandler.handle_query(req, res, user, jobsdir, jobs);
 });
 
