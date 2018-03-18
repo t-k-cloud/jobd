@@ -1,6 +1,7 @@
 var fs = require("fs");
 var ini = require('ini');
 var DepGraph = require('dependency-graph').DepGraph;
+var path = require('path')
 
 function loadEnvVar(jobsdir) {
 	let env = {};
@@ -11,6 +12,9 @@ function loadEnvVar(jobsdir) {
 	} catch (e) {
 		console.log(e.message);
 	}
+
+	/* inject JOBSDIR built-in env variable */
+	env['JOBSDIR'] = path.resolve(jobsdir); // to abs dir
 
 	return env;
 }

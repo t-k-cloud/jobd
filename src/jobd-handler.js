@@ -108,9 +108,6 @@ exports.handle_query = function (req, res, user, jobsdir, jobs) {
 	let runList = [];
 	let logdir = getLogdir(jobsdir);
 
-	/* set JOBSDIR built-in env variable */
-	jobs.env['JOBSDIR'] = jobsdir;
-
 	/* print coming query */
 	masterLog(logdir, 'Query: ' + JSON.stringify(reqJson));
 
