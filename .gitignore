@@ -2,3 +2,4 @@ yarn.lock
 package.json
 node_modules/
 *.swp
+*.pid
