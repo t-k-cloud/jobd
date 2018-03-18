@@ -2,8 +2,8 @@ var jobRunner = require('./jobrunner.js');
 var logger = require('./joblogger.js');
 var fs = require('fs');
 
-const fv_all = 20;
-const fv_one = 500;
+const fv_all = 40;
+const fv_one = 80;
 const maxFailsToBreak = 3;
 
 function getLogdir(jobsdir) {

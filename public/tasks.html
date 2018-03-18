@@ -14,6 +14,7 @@ function showjob(jobname, invoke_time_str, pid) {
 		$("#retjson").text(jobname + ' pid#' + pid + ' ' + invoke_time_str +
 		                   JSON.stringify(res, null, 2));
 		pullLog(jobname);
+		$("#log-area").click(function() { pullLog(jobname); });
 	}).fail(function() {
 		$("#retjson").html('ajax call failed.');
 	});
@@ -131,6 +132,11 @@ $(document).ready(function () {
 	});
 });
 </script>
+<style>
+#log-area:hover {
+	cursor:pointer;
+}
+</style>
 </head>
 <body>
 
@@ -144,8 +150,10 @@ $(document).ready(function () {
 <div id="tasks">
 </div>
 
+<div id="log-area">
 <pre id="log" style="background:black;color:gray;">
 </pre>
+</div>
 
 </body>
 </html>
