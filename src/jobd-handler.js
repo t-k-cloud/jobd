@@ -91,8 +91,6 @@ exports.handle_reload = function (res, jobsldr, jobsdir, jobs) {
 		return jobs;
 	}
 
-	jobRunner.clear_task(0); /* stop all timers and clear tasks history */
-
 	res.json({'res': 'successful'});
 	return newjobs;
 };

@@ -64,10 +64,27 @@ $(document).ready(function () {
 			});
 		});
 	});
+
+	$("#reload").click(function() {
+		$.ajax({
+			method: "GET",
+			url:"reload/",
+			contentType: "application/json; charset=utf-8",
+			dataType: "json" /* expecting data type */
+		}).done(function (res) {
+			$("#retjson").text(JSON.stringify(res, null, 2));
+			setTimeout(function () {
+				location.reload(); /* refresh page */
+			}, 1000);
+		}).fail(function() {
+			$("#retjson").html('ajax call failed.');
+		});
+	});
 });
 </script>
 </head>
 <body>
+<button id="reload">reload jobs</button>
 Clicked job name (to be copied to clipboard): <input id="jobname"></input>
 <span id="retjson"
 style="background-color:#ffcfcf; position:fixed; left: 0; bottom: 0; font-size:large">

@@ -117,21 +117,9 @@ $(document).ready(function () {
 	});
 	pullTaskList();
 
-	$("#clear").click(function() {
-		if (confirm("Sure to clear running tasks?")) {
-			$.ajax({
-				method: "GET",
-				url:"reload/",
-				contentType: "application/json; charset=utf-8",
-				dataType: "json" /* expecting data type */
-			}).done(function (res) {
-				$("#retjson").text(JSON.stringify(res, null, 2));
-				setTimeout(function () {
-					pullTaskList();
-				}, 500);
-			}).fail(function() {
-				$("#retjson").html('ajax call failed.');
-			});
+	$("#killall").click(function() {
+		if (confirm("Kill all running tasks?")) {
+			kill(0);
 		}
 	});
 });
@@ -145,7 +133,7 @@ $(document).ready(function () {
 <body>
 
 <button id="refresh">refresh list</button>
-<button id="clear">clear tasks and reload all jobs</button>
+<button id="killall">kill all jobs</button>
 
 <h3>Return JSON</h3>
 <span id="retjson" style="color:gray"></span>
