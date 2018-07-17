@@ -2,7 +2,7 @@ var CronJob = require('cron').CronJob;
 var syncLoop = require('./syncloop.js').syncLoop;
 var extend = require('util')._extend;
 var userid = require('userid');
-var pty = require('pty.js');
+var pty = require('node-pty');
 var childProcess = require('child_process');
 var tasks = require('./tasks.js');
 
