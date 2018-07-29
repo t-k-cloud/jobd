@@ -5,6 +5,11 @@
 <script type="text/javascript" src="vendor/jquery/jquery.min.js"></script>
 <script>
 function showjob(jobname, invoke_time_str, pid) {
+	/* copy jobname to clipboard */
+	$('#jobname').val(jobname);
+	$('#jobname').select();
+	document.execCommand('copy');
+	/* request job description */
 	$.ajax({
 		method: "GET",
 		url:"show/" + jobname,
@@ -134,6 +139,7 @@ $(document).ready(function () {
 
 <button id="refresh">refresh list</button>
 <button id="killall">kill all jobs</button>
+Current select jobname: <input id="jobname"></input>
 
 <h3>Return JSON</h3>
 <span id="retjson" style="color:gray"></span>
