@@ -23,6 +23,11 @@ $(document).ready(function () {
 		});
 	});
 
+	$("a.common-query").click(function() {
+		const t = $(this).text();
+		$('#target').val(t);
+	});
+
 	$("#stdin-button").click(function() {
 		$.ajax({
 			method: "POST",
@@ -70,6 +75,15 @@ $(document).ready(function () {
 	<a href="log/all">logofall</a>.
 </p>
 <h3>Query</h3>
+
+<p>
+Stared queries:
+	<a href="javascript: void(0)" class="common-query">proj:reset-all</a>
+	<a href="javascript: void(0)" class="common-query">service-hippo:up</a>
+	<a href="javascript: void(0)" class="common-query">service-blog:up</a>
+	<a href="javascript: void(0)" class="common-query">tkcloud:up</a>
+</p>
+
 <select id="type">
 <option value="goal">goal</option>
 <option value="unit">unit</option>
