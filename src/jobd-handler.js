@@ -27,6 +27,7 @@ function slaveLog(jobname, logdir, line) {
 exports.handle_log = function (jobsdir, jobname, res) {
 	let logdir = getLogdir(jobsdir);
 	res.set('Content-Type', 'text/plain');
+	res.header("Access-Control-Allow-Origin", "*");
 	logger.read(jobname, logdir, function (lines) {
 		res.write(lines);
 	}, function () {
