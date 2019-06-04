@@ -2,6 +2,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var execSync = require('child_process').execSync;
 var path = require('path');
+var cors = require('cors'); /* cross-origin */
 
 var jobsldr = require('./src/jobsldr.js');
 var routeHandler = require('./src/jobd-handler.js');
@@ -54,6 +55,12 @@ process.stdin.on('error', function (e) {
 app = express();
 app.use(bodyParser.json());
 app.use(express.static('./public/'));
+
+var corsOptions = {
+	origin: '*',
+	optionsSuccessStatus: 200 // some legacy browsers choke on 204
+}
+app.use(cors(corsOptions));
 
 /* setup authentication module */
 expAuth.init(app, {
