@@ -46,8 +46,8 @@ exports.spawn = function(cmd, opt, logLines, onExit,
 
 	/* spawn runner process */
 	var runner = spawnFun('/bin/sh', ['-c', cmd], {
-		'uid': user,
-		'gid': group,
+		'uid': uid,
+		'gid': gid,
 		'cwd': cwd,
 		'env': env,
 		'cols': 80,
